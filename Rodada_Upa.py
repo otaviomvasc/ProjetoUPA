@@ -71,61 +71,55 @@ if __name__ == "__main__":
                                       ["urina", 0.1],
                                       ["exame_sangue", 0.1]]
 
-
         decisao_apos_medicacao = [["saida", 0.4],
-                                  ["medico", 0.2] #TODO: E O PACIENTE QUE VEM DO PEDIATRA E TOMA MEDICAÇÃO? COMO ELE VAI VOLTAR PARA LÁ?
+                                  ["medico", 0.2], #TODO: E O PACIENTE QUE VEM DO PEDIATRA E TOMA MEDICAÇÃO? COMO ELE VAI VOLTAR PARA LÁ?
                                   ["raio-x", 0.1],
                                   ["eletro", 0.1],
                                   ["urina", 0.1],
                                   ["exame_sangue", 0.1]
                                   ]
 
-        decisao_apos_urina = ["medico", 0.7,
+        decisao_apos_urina = [["medico", 0.7],
                               ["raio-x", 0.1],
                               ["eletro", 0.1],
                               ["exame_sangue", 0.1]
                               ]
 
-
-        decisao_apos_exame_sangue = [["analise_sangue_externo", 0.5],
-                                     ["analise_sangue_interno", 0.5]]
-
-        decisao_apos_exame_sangue_interno = ["medico", 0.7,
+        decisao_apos_exame_sangue = [["medico", 0.7],
                               ["raio-x", 0.1],
                               ["eletro", 0.1],
                               ["urina", 0.1]
                               ]
 
-        decisao_apos_exame_sangue_externo = ["medico", 0.7,
-                                             ["raio-x", 0.1],
-                                             ["eletro", 0.1],
-                                             ["urina", 0.1]
-                                             ]
-
-
-        decisao_apos_raio_x = [["medico", 0.7,
+        decisao_apos_raio_x = [["medico", 0.7],
                              ["exame_sangue", 0.1],
                              ["eletro", 0.1],
                              ["urina", 0.1]
-                                             ]]
+                                             ]
 
-        decisao_apos_eletro = [["medico", 0.7,
+        decisao_apos_eletro = [["medico", 0.7],
                              ["exame_sangue", 0.1],
                              ["raio-x", 0.1],
-                             ["urina", 0.1]]]
+                             ["urina", 0.1]]
+
+        #Decisao para tempo de espera do resultado do exame de sangue!!!!
+        analise_de_sangue = [[4 * 60 * 60, 0.5],
+                             [2 * 60 * 60, 0.5]]
+
+        analise_urina = [[2 * 60 * 60, 1]]
+
 
         dict_atr = {"decide_atendimento": calcula(classificacao_clinico_pediatra),
-                    "triagem": calcula(classificacao_prioridade),
+                    "prioridade": calcula(classificacao_prioridade),
                     "decisao_apos_clinico": calcula(decisao_apos_clinico),
                     "decisao_apos_pediatra": calcula(decisao_apos_pediatra),
                     "decisao_apos_raio_x":calcula(decisao_apos_raio_x),
                     "decisao_apos_eletro": calcula(decisao_apos_eletro),
                     "decisao_apos_urina": calcula(decisao_apos_urina),
                     "decisao_apos_exame_sangue": calcula(decisao_apos_exame_sangue),
-                    "decisao_apos_analise_sangue_externo": calcula(decisao_apos_exame_sangue_externo),
-                    "decisao_apos_analise_sangue_interno": calcula(decisao_apos_exame_sangue_interno),
-                    "analise_urina": [],
-                    "decisao_apos_medicacao": calcula(decisao_apos_medicacao)
+                    "decisao_apos_medicacao": calcula(decisao_apos_medicacao),
+                    "tempo_resultado_exame_sangue": calcula(analise_de_sangue),
+                    "tempo_resultado_exame_urina": calcula(analise_urina),
                     }
 
         return dict_atr
@@ -140,8 +134,9 @@ if __name__ == "__main__":
         "tomar_medicacao": ["decisao_apos_medicacao"],
         "urina": ["decisao_apos_urina"],
         "exame_sangue": ["decisao_apos_exame_sangue"],
-        "analise_sangue_externo" :["decisao_apos_analise_sangue_externo"],
-        "analise_sangue_interno": ["decisao_apos_analise_sangue_interno"],
+        "analise_urina": "medico",
+        "raio-x": ["decisao_apos_raio_x"],
+        "eletro": ["decisao_apos_eletro"]
     }
 
     prioridades = {
@@ -151,8 +146,8 @@ if __name__ == "__main__":
         "pediatra": "prioridade"
     }
 
-
     distribuicoes_probabilidade = calcula_distribuicoes_prob()
+
     recursos = {"secretaria": [2, False],
                 "enfermeira_triagem": [2,False],
                 "clinico": [3,True],
@@ -175,11 +170,14 @@ if __name__ == "__main__":
                             "analise_sangue_interno": [],
                             "analise_urina": [],
                             "aplicar_medicacao": ["espaco_medicacao", "tecnica_enfermagem"],
-                            "tomar_medicacao" : ["tecnica_enfermagem"] #TODO: pensar em como fazer para liberar apenas 1 requests para liberar apenas a medicação!
+                            "tomar_medicacao" : ["tecnica_enfermagem"], #TODO: pensar em como fazer para liberar apenas 1 requests para liberar apenas a medicação!
+                            "eletro": ["eletro"]
                             }
 
-    atribuicoes_processo = {"triagem": "prioridade"}
-    decisoes_processo = {}
+    atribuicoes_processo = {"triagem": "prioridade",
+                            "exame_sangue": "tempo_resultado_exame_sangue",
+                            "urina": "tempo_resultado_exame_urina"
+                        }
 
     seed(1)
     simulacao = Simulacao(distribuicoes=distribuicoes,

@@ -43,9 +43,9 @@ class Simulacao():
     def processo_com_recurso(self, entidade_individual, processo):
 
         entidade_individual.entra_fila = self.env.now
-        #requests_recursos = [self.recursos[recurso_humando].request() for recurso_humando in self.necessidade_recursos[processo]]
+
         requests_recursos = [self.recursos[recurso_humando].request() if type(self.recursos[recurso_humando]) == simpy.resources.resource.Resource
-                             else self.recursos[recurso_humando].request(priority=entidade_individual.prioridade)
+                             else self.recursos[recurso_humando].request(priority=entidade_individual.atributos['prioridade'])
                              for recurso_humando in self.necessidade_recursos[processo]]
 
 
@@ -73,11 +73,21 @@ class Simulacao():
 
         param = self.atribuicoes_por_processo.get(processo, None)
         if param:
-            atr = self.retorna_prob(processo=processo)
-            entidade_individual.parametros[param] = atr
-            entidade_individual.prioridade = atr
+            atr = self.retorna_prob(processo=param)
+            entidade_individual.atributos[param] = atr if param == "prioridade" else atr + self.env.now
 
-        proximo_processo = self.decide_proximo_processo(processo=processo, entidade=entidade_individual)
+
+        if entidade_individual.atributos.get("retorno", False):
+            proximo_processo = "saida" #Pacientes saem do sistema depois do retorno!
+
+        else:
+            proximo_processo = self.decide_proximo_processo(processo=processo, entidade=entidade_individual)
+
+        if not isinstance(proximo_processo, str):
+            yield self.env.timeout(proximo_processo) #Aguarda tempo do resultado do exame!!!
+            entidade_individual.atributos["prioridade"] = 2  #Pacientes com retorno tem maior prioridade
+            entidade_individual.atributos["retorno"] = True
+            self.env.process(self.processo_com_recurso(entidade_individual=entidade_individual, processo=entidade_individual.atributos["tipo_atendimento"]))
 
         if proximo_processo == "saida":
             entidade_individual.saida_sistema = self.env.now
@@ -85,7 +95,7 @@ class Simulacao():
             self.estatisticas_sistema.computa_saidas(self.env.now)
             if self.imprime_detalhes:
                 print(f'{self.env.now}: Entidade {entidade_individual.nome} saiu do sistema!')
-        else:
+        elif isinstance(proximo_processo, str):
             self.env.process(self.processo_com_recurso(entidade_individual=entidade_individual, processo=proximo_processo))
 
 
@@ -94,15 +104,28 @@ class Simulacao():
         return next(pr[2] for pr in self.dist_probabilidade[processo] if aleatorio >= pr[0] and aleatorio <= pr[1])
 
     def decide_proximo_processo(self, processo, entidade):
+
         proximo_processo = self.proximo_processo[processo]
         if isinstance(proximo_processo, str): #Aqui já vai direto para próximo processo
             return proximo_processo
         else:#Aqui é necessária decisão
             decisao = self.proximo_processo[processo][0]
             aux = self.retorna_prob(decisao)
+            if decisao == "decide_atendimento":
+                entidade.atributos["tipo_atendimento"] = aux
             if aux == "medico":
-                b=0 #TODO: Decidir aqui se ja vai para o médico ou se aguarda resultado do exame, que será um método diferente!
+                if "tempo_resultado_exame_sangue" in entidade.atributos.keys(): #tempo de espera para resultados do exame de sangue (interno ou externo)
+                    tempo_espera =  entidade.atributos["tempo_resultado_exame_sangue"] - self.env.now
+                    return tempo_espera
+                elif "tempo_resultado_exame_urina" in entidade.atributos.keys(): #tempo de espera para resultados do exame de urina
+                    tempo_espera =  entidade.atributos["tempo_resultado_exame_urina"] - self.env.now
+                    return tempo_espera
+
+                else:
+                    return "clinico"
+
             return aux
+
 
     def finaliza_todas_estatisticas(self):
         self.entidades.fecha_estatisticas()
@@ -110,31 +133,8 @@ class Simulacao():
         self.estatisticas_sistema.fecha_estatisticas()
 
     def gera_graficos(self):
-        def define_time_slot(hora_chegada, dia_atual):
-            hora_chegada = hora_chegada - (3600*13.5 * dia_atual)#Definição hora chegada para rodar por mais dias
-            coef = 3600  # TODO: Verificar unidade de tempo da simulação
-            time_slot_1 = [0, 1.5 * coef, "time_slot_1"]
-            time_slot_2 = [1.5 * coef, 3.5 * coef, "time_slot_2"]
-            time_slot_3 = [3.5 * coef, 6 * coef, "time_slot_3"]
-            time_slot_4 = [6 * coef, 8 * coef, "time_slot_4"]
-            time_slot_5 = [8 * coef, 10 * coef, "time_slot_5"]
-            time_slot_6 = [10 * coef, 12 * coef, "time_slot_6"]
-            time_slot_7 = [12 * coef, 13.5 * coef, "time_slot_7"]
-
-            slots = [time_slot_1, time_slot_2, time_slot_3, time_slot_4, time_slot_5, time_slot_6, time_slot_7]
-
-
-            return next(slot[2] for slot in slots if hora_chegada >= slot[0] and hora_chegada <= slot[1])  # iterator para minimizar tempo de busca!
-
-        def calcula_time_slot(hora_chegada, define_time_slot):
-            dia = np.floor(hora_chegada['T'] / (3600 * 13.5))  # Forma para calculo de hora de chegada dos dias!!
-            ts = define_time_slot(hora_chegada['T'], dia)
-            return ts
-
-        time_slots = pd.unique(self.entidades.df_entidades['time_slot'])
-        self.recursos_est.df_estatisticas_recursos['time_slot'] = self.recursos_est.df_estatisticas_recursos.apply(lambda x: calcula_time_slot(x.T, define_time_slot), axis=1 )
-
         #Graficos de WIP, entrada e saída
+
         fig = px.line(self.estatisticas_sistema.df_entidades_brutas,
                       x="discretizacao", y="WIP", title='Grafico de WIP')
         fig.show()
@@ -145,22 +145,15 @@ class Simulacao():
                       x="T", y="utilizacao", color="recurso", title='Grafico de Utilizacao Total dos Recursos')
         fig.show()
 
-        for time_s in time_slots:
-            df_recursos = self.recursos_est.df_estatisticas_recursos.loc[
-                self.recursos_est.df_estatisticas_recursos.time_slot == time_s]
-            fig = px.line(df_recursos,
-                          x="T", y="utilizacao", color="recurso",
-                          title=f'Grafico de Utilizacao Total dos Recursos no {time_s}')
-            fig.show()
+
 
         #GRÁFICOS TEMPO DE FILA
-        df_tempo_fila_time_slot = self.entidades.df_entidades.groupby(by=['time_slot']).agg({"tempo_fila":"mean"}).reset_index()
-        fig = px.bar(df_tempo_fila_time_slot,x='time_slot', y="tempo_fila", title='Media de tempo em fila por time_slot')
+        df_tempo_fila_time_slot = self.entidades.df_entidades.groupby(by=['processo']).agg({"tempo_fila":"mean"}).reset_index()
+        fig = px.bar(df_tempo_fila_time_slot,x='processo', y="tempo_fila", title='Media de tempo em fila por processo')
         fig.show()
 
-        df_tempo_fila_time_slot_processo = self.entidades.df_entidades.groupby(by=['time_slot', 'processo']).agg({"tempo_fila":"mean"}).reset_index()
-        fig = px.bar(df_tempo_fila_time_slot_processo,x='time_slot', y="tempo_fila", color='processo', title='Media de tempo em fila por time_slot e por processo')
-        fig.show()
+        #TODO: Criar análises por cada nível de prioridade!!!
+
 
 class EstatisticasSistema():
     def __init__(self):
@@ -237,7 +230,7 @@ class Entidade_individual(Entidades):
         self.saida_sistema: float = 0.0
         self.time_slot = None
         self.tempo_sistema = 0
-        self.parametros: defaultdict = {}
+        self.atributos: defaultdict = {}
         self.processo_atual: str
 
 
