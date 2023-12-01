@@ -39,7 +39,6 @@ class Simulacao():
             self.entidades.lista_entidades.append(entidade_individual)
             self.env.process(self.processo_com_recurso(entidade_individual=entidade_individual, processo="ficha"))
 
-
     def processo_com_recurso(self, entidade_individual, processo):
 
         entidade_individual.entra_fila = self.env.now
@@ -84,9 +83,13 @@ class Simulacao():
             proximo_processo = self.decide_proximo_processo(processo=processo, entidade=entidade_individual)
 
         if not isinstance(proximo_processo, str):
+            entidade_individual.entra_fila = self.env.now
+            entidade_individual.processo_atual = "aguarda_resultado_exame"
             yield self.env.timeout(proximo_processo) #Aguarda tempo do resultado do exame!!!
             entidade_individual.atributos["prioridade"] = 2  #Pacientes com retorno tem maior prioridade
             entidade_individual.atributos["retorno"] = True
+            entidade_individual.sai_fila = self.env.now
+            entidade_individual.fecha_ciclo(processo="aguarda_resultado_exame")
             self.env.process(self.processo_com_recurso(entidade_individual=entidade_individual, processo=entidade_individual.atributos["tipo_atendimento"]))
 
         if proximo_processo == "saida":
@@ -97,7 +100,6 @@ class Simulacao():
                 print(f'{self.env.now}: Entidade {entidade_individual.nome} saiu do sistema!')
         elif isinstance(proximo_processo, str):
             self.env.process(self.processo_com_recurso(entidade_individual=entidade_individual, processo=proximo_processo))
-
 
     def retorna_prob(self, processo):
         aleatorio = random.random()
@@ -126,7 +128,6 @@ class Simulacao():
 
             return aux
 
-
     def finaliza_todas_estatisticas(self):
         self.entidades.fecha_estatisticas()
         self.recursos_est.fecha_estatisticas()
@@ -134,11 +135,16 @@ class Simulacao():
 
     def gera_graficos(self):
         #Graficos de WIP, entrada e saída
+        def retorna_prioridade(paciente, lista_entidades):
+            try:
+                prioridade = next(ent.atributos['prioridade'] for ent in lista_entidades if paciente == ent.nome)
+                return prioridade
+            except KeyError:
+                return "Nao Passou da Triagem"
 
         fig = px.line(self.estatisticas_sistema.df_entidades_brutas,
                       x="discretizacao", y="WIP", title='Grafico de WIP')
         fig.show()
-
 
         # GRÁFICOS DE UTILIZAÇÃO
         fig = px.line(self.recursos_est.df_estatisticas_recursos,
@@ -148,12 +154,114 @@ class Simulacao():
 
 
         #GRÁFICOS TEMPO DE FILA
+        self.entidades.df_entidades['prioridade_paciente'] = self.entidades.df_entidades.apply(lambda x: retorna_prioridade(x.entidade, self.entidades.lista_entidades), axis=1)
         df_tempo_fila_time_slot = self.entidades.df_entidades.groupby(by=['processo']).agg({"tempo_fila":"mean"}).reset_index()
         fig = px.bar(df_tempo_fila_time_slot,x='processo', y="tempo_fila", title='Media de tempo em fila por processo')
         fig.show()
 
-        #TODO: Criar análises por cada nível de prioridade!!!
+        #Média do tempo em fila por nível de prioridade
+        df_tempo_fila_prioridade = self.entidades.df_entidades.groupby(by=['prioridade_paciente']).agg(
+            {"tempo_fila": "mean"}).reset_index()
 
+        fig = px.bar(df_tempo_fila_prioridade, x='prioridade_paciente', y="tempo_fila", title='Media de tempo em fila por prioridade de Atendimento')
+        fig.show()
+
+
+        df_tempo_fila_prioridade_por_processo = self.entidades.df_entidades.groupby(by=['prioridade_paciente', 'processo']).agg(
+            {"tempo_fila": "mean"}).reset_index()
+
+
+        fig = px.bar(df_tempo_fila_prioridade_por_processo, x='prioridade_paciente', color="processo", y="tempo_fila", title='Media de tempo em fila por prioridade de Atendimento por processo')
+        fig.show()
+
+    def confirma_fluxos(self):
+
+        possiveis_fluxos =  [
+            #Apenas consultas
+            ["ficha", "triagem", "clinico", "saida"],
+            ["ficha", "triagem", "pediatra", "saida"],
+                # Tomar medicação, voltar no clínico e sair
+            ["ficha", "triagem", "clinico", "aplicar_medicacao", "tomar_medicacao", "clinico", "saida"],
+            ["ficha", "triagem", "pediatra", "aplicar_medicacao", "tomar_medicacao", "pediatra", "saida"],
+
+            #Tomar medicação e ja sair direto
+            ["ficha", "triagem", "clinico", "aplicar_medicacao", "tomar_medicacao", "saida"],
+            ["ficha", "triagem", "pediatra", "aplicar_medicacao", "tomar_medicacao", "saida"],
+
+            #Tomar medicacao e fazer exame
+            ["ficha", "triagem", "clinico", "aplicar_medicacao", "tomar_medicacao", "raio-x", "clinico", "saida"],
+            ["ficha", "triagem", "clinico", "aplicar_medicacao", "tomar_medicacao", "exame_sangue", "clinico", "saida"],
+            ["ficha", "triagem", "clinico", "aplicar_medicacao", "tomar_medicacao", "urina", "clinico", "saida"],
+            ["ficha", "triagem", "clinico", "aplicar_medicacao", "tomar_medicacao", "eletro", "clinico", "saida"],
+
+            ["ficha", "triagem", "pediatra", "aplicar_medicacao", "tomar_medicacao", "raio-x", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra", "aplicar_medicacao", "tomar_medicacao", "exame_sangue", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra", "aplicar_medicacao", "tomar_medicacao", "urina", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra", "aplicar_medicacao", "tomar_medicacao", "eletro", "pediatra", "saida"],
+
+            #Fazer apenas 1 exame
+            ["ficha", "triagem", "clinico",  "raio-x", "clinico", "saida"],
+            ["ficha", "triagem", "clinico",  "exame_sangue", "clinico", "saida"],
+            ["ficha", "triagem", "clinico",  "urina", "clinico", "saida"],
+            ["ficha", "triagem", "clinico",  "eletro", "clinico", "saida"],
+
+            ["ficha", "triagem", "pediatra",  "raio-x", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra",  "exame_sangue", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra",  "urina", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra",  "eletro", "pediatra", "saida"],
+
+
+            #Fazer 2 exames - Iniciar só com 2 exames simultaneos e ir rodando para pegar mais casos:
+            #Sangue e Urina
+            ["ficha", "triagem", "clinico",  "exame_sangue", "urina", "clinico", "saida"],
+            ["ficha", "triagem", "clinico", "urina", "exame_sangue",  "clinico", "saida"],
+
+            ["ficha", "triagem", "pediatra",  "exame_sangue", "urina", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra", "urina", "exame_sangue",  "pediatra", "saida"],
+
+            #Sangue e raio-x
+            ["ficha", "triagem", "clinico",  "exame_sangue", "raio-x", "clinico", "saida"],
+            ["ficha", "triagem", "clinico", "raio-x", "exame_sangue",  "clinico", "saida"],
+
+            ["ficha", "triagem", "pediatra",  "exame_sangue", "raio-x", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra", "raio-x", "exame_sangue",  "pediatra", "saida"],
+
+
+            #Sangue e eletro
+            ["ficha", "triagem", "clinico",  "exame_sangue", "eletro", "clinico", "saida"],
+            ["ficha", "triagem", "clinico", "eletro", "exame_sangue",  "clinico", "saida"],
+
+            ["ficha", "triagem", "pediatra",  "exame_sangue", "eletro", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra", "eletro", "exame_sangue",  "pediatra", "saida"],
+
+
+            #urina e raio-x
+            ["ficha", "triagem", "clinico",  "urina", "raio-x", "clinico", "saida"],
+            ["ficha", "triagem", "clinico", "raio-x", "urina",  "clinico", "saida"],
+
+            ["ficha", "triagem", "pediatra",  "urina", "raio-x", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra", "raio-x", "urina",  "pediatra", "saida"],
+
+
+            #urina e eletro
+            ["ficha", "triagem", "clinico",  "urina", "eletro", "clinico", "saida"],
+            ["ficha", "triagem", "clinico", "eletro", "urina",  "clinico", "saida"],
+
+            ["ficha", "triagem", "pediatra",  "urina", "eletro", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra", "eletro", "urina",  "pediatra", "saida"],
+
+            #raio-x e eletro:
+            ["ficha", "triagem", "clinico",  "raio-x", "eletro", "clinico", "saida"],
+            ["ficha", "triagem", "clinico", "eletro", "raio-x",  "clinico", "saida"],
+
+            ["ficha", "triagem", "pediatra",  "raio-x", "eletro", "pediatra", "saida"],
+            ["ficha", "triagem", "pediatra", "eletro", "raio-x",  "pediatra", "saida"]]
+
+
+        for ent in self.entidades.lista_entidades:
+            fluxo = [f["processo"] for f in ent.estatisticas if f["processo"] != "aguarda_resultado_exame"]
+            if fluxo not in possiveis_fluxos:
+                print(fluxo)
 
 class EstatisticasSistema():
     def __init__(self):
@@ -323,6 +431,7 @@ class CorridaSimulacao():
             simulacao.env.run(until=simulacao.tempo)
             simulacao.finaliza_todas_estatisticas()
             if len(self.simulacoes) == 1:
+                simulacao.confirma_fluxos()
                 simulacao.gera_graficos()
 
     def fecha_estatisticas_experimento(self):

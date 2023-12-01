@@ -148,8 +148,8 @@ if __name__ == "__main__":
 
     distribuicoes_probabilidade = calcula_distribuicoes_prob()
 
-    recursos = {"secretaria": [2, False],
-                "enfermeira_triagem": [2,False],
+    recursos = {"secretaria": [4, False],
+                "enfermeira_triagem": [4,False],
                 "clinico": [3,True],
                 "pediatra": [3,True],
                 "raio-x": [1, True],
