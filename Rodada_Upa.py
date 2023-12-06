@@ -43,7 +43,7 @@ if __name__ == "__main__":
         coef_processos = 60 #Conversão para minutos!!
         coef_chegadas = 60
         coef_checkin = 60
-        dados = {"chegada":expovariate(1/(0.026)),
+        dados = {"chegada":expovariate(0.0026),
                  "ficha": random.triangular(2*coef_chegadas, 7*coef_chegadas, 4*coef_chegadas),
                  "triagem": random.triangular(4*coef_chegadas, 9 * coef_chegadas, 7 * coef_chegadas),
                  "clinico": random.triangular(5*coef_chegadas, 15 * coef_chegadas, 10 * coef_chegadas),
@@ -206,7 +206,7 @@ if __name__ == "__main__":
 
     seed(1)
     simulacao = Simulacao(distribuicoes=distribuicoes,
-                          imprime=False,
+                          imprime=True,
                           recursos=recursos,
                           dist_prob=distribuicoes_probabilidade,
                           tempo=tempo,
