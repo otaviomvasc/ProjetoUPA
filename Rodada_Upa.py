@@ -9,6 +9,31 @@ from scipy import stats
 
 from Modelos import *
 
+"""
+Cálculos preliminares com dados do slide:
+
+total de pacientes: 4951 + 1801 = 6752
+
+1 - tipo de atendimento (clinica e pediatria
+    pediatria = 1801 / 6752 = 0.26
+    clinica =  4951 / 6752 = 0.74
+    
+2 - Prioridade de atendimentos:
+Total = 132 + 1066 + 6178 + 8 + 246 = 7630 
+    Laranja = 1 - 132 / 7630 = 0.017
+    Amarelo = 2 - 1066 / 7630 = 0.139
+    Verde = 3 - - 6178 / 7630 = 0.80129
+    Azul = 4 -    8 / 7630 = 0.001
+    Branco = 5 - 246 / 7630 = 0.032
+    
+
+3 - Taxa de Chegada:
+    media_de_chegadas = (4900 + 1604 + 4951 + 1801 + 5104 + 1782) / 3 = 6714.0
+    segundos_no_mes = 30 * 24 * 60 * 60 = 2592000
+    media_chegadas / segundo = 6714.0 / 2592000 = 0.026
+ 
+"""
+
 
 
 if __name__ == "__main__":
@@ -18,7 +43,7 @@ if __name__ == "__main__":
         coef_processos = 60 #Conversão para minutos!!
         coef_chegadas = 60
         coef_checkin = 60
-        dados = {"chegada":expovariate(1/(1.7 * coef_chegadas)),
+        dados = {"chegada":expovariate(1/(0.026)),
                  "ficha": random.triangular(2*coef_chegadas, 7*coef_chegadas, 4*coef_chegadas),
                  "triagem": random.triangular(4*coef_chegadas, 9 * coef_chegadas, 7 * coef_chegadas),
                  "clinico": random.triangular(5*coef_chegadas, 15 * coef_chegadas, 10 * coef_chegadas),
@@ -47,14 +72,14 @@ if __name__ == "__main__":
 
             # 1 - clinico e 2 -  pediatra
 
-        classificacao_clinico_pediatra = [["clinico", 0.7],
-                                          ["pediatra", 0.3]]
+        classificacao_clinico_pediatra = [["clinico", 0.74],
+                                          ["pediatra", 0.26]]
         # 5 - menos grave e 1 - mais grave
-        classificacao_prioridade = [[5, 0.719],
-                                    [4, 0.038],
-                                    [3, 0.028],
-                                    [2, 0.172],
-                                    [1, 0.075]]
+        classificacao_prioridade = [[5, 0.032],
+                                    [4, 0.001],
+                                    [3, 0.80129],
+                                    [2, 0.150],
+                                    [1, 0.017]]
 
         #saida do sistema após o clinico
         decisao_apos_clinico = [["saida", 0.4],
@@ -181,7 +206,7 @@ if __name__ == "__main__":
 
     seed(1)
     simulacao = Simulacao(distribuicoes=distribuicoes,
-                          imprime=True,
+                          imprime=False,
                           recursos=recursos,
                           dist_prob=distribuicoes_probabilidade,
                           tempo=tempo,

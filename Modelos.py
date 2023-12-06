@@ -83,6 +83,7 @@ class Simulacao():
             proximo_processo = self.decide_proximo_processo(processo=processo, entidade=entidade_individual)
 
         if not isinstance(proximo_processo, str):
+            #Fila para aguardar resulltado do exame!
             entidade_individual.entra_fila = self.env.now
             entidade_individual.processo_atual = "aguarda_resultado_exame"
             yield self.env.timeout(proximo_processo) #Aguarda tempo do resultado do exame!!!
@@ -94,7 +95,8 @@ class Simulacao():
 
         if proximo_processo == "saida":
             entidade_individual.saida_sistema = self.env.now
-            entidade_individual.fecha_ciclo(processo="saida_sistema")
+            entidade_individual.processo_atual = "saida"
+            entidade_individual.fecha_ciclo(processo="saida")
             self.estatisticas_sistema.computa_saidas(self.env.now)
             if self.imprime_detalhes:
                 print(f'{self.env.now}: Entidade {entidade_individual.nome} saiu do sistema!')
@@ -103,7 +105,10 @@ class Simulacao():
 
     def retorna_prob(self, processo):
         aleatorio = random.random()
-        return next(pr[2] for pr in self.dist_probabilidade[processo] if aleatorio >= pr[0] and aleatorio <= pr[1])
+        try:
+            return next(pr[2] for pr in self.dist_probabilidade[processo] if aleatorio >= pr[0] and aleatorio <= pr[1])
+        except:
+            a=0
 
     def decide_proximo_processo(self, processo, entidade):
 
@@ -112,19 +117,22 @@ class Simulacao():
             return proximo_processo
         else:#Aqui é necessária decisão
             decisao = self.proximo_processo[processo][0]
-            aux = self.retorna_prob(decisao)
+            while True:
+                aux = self.retorna_prob(decisao)
+                if aux not in [ent['processo'] for ent in entidade.estatisticas]:
+                    break
             if decisao == "decide_atendimento":
                 entidade.atributos["tipo_atendimento"] = aux
             if aux == "medico":
+                entidade.atributos["retorno"] = True #Pacientes que já fizeram seus exames e agora vão fazer retorno para o médico e depois saem do sistema
                 if "tempo_resultado_exame_sangue" in entidade.atributos.keys(): #tempo de espera para resultados do exame de sangue (interno ou externo)
                     tempo_espera =  entidade.atributos["tempo_resultado_exame_sangue"] - self.env.now
                     return tempo_espera
                 elif "tempo_resultado_exame_urina" in entidade.atributos.keys(): #tempo de espera para resultados do exame de urina
                     tempo_espera =  entidade.atributos["tempo_resultado_exame_urina"] - self.env.now
                     return tempo_espera
-
                 else:
-                    return "clinico"
+                    return entidade.atributos['tipo_atendimento']
 
             return aux
 
@@ -255,13 +263,61 @@ class Simulacao():
             ["ficha", "triagem", "clinico", "eletro", "raio-x",  "clinico", "saida"],
 
             ["ficha", "triagem", "pediatra",  "raio-x", "eletro", "pediatra", "saida"],
-            ["ficha", "triagem", "pediatra", "eletro", "raio-x",  "pediatra", "saida"]]
+            ["ficha", "triagem", "pediatra", "eletro", "raio-x",  "pediatra", "saida"],
+
+            #fluxos incompletos
+            #['ficha', 'triagem', 'clinico', 'urina', 'eletro', 'clinico'], #TODO: porque não saiu do sistema?
+           # ['ficha', 'triagem', 'clinico', 'eletro', 'clinico'],
+            ['ficha', 'triagem', 'clinico'],
+            ['ficha', 'triagem', 'pediatra'],
+            ['ficha', 'triagem', 'clinico', 'aplicar_medicacao'],
+            ['ficha', 'triagem', 'pediatra', 'aplicar_medicacao'],
+            ['ficha', 'triagem', 'pediatra', 'aplicar_medicacao'],
+            ['ficha', 'triagem', 'clinico', 'aplicar_medicacao', 'tomar_medicacao'],
+            ['ficha', 'triagem', 'clinico', 'eletro', 'clinico'],
+            ['ficha', 'triagem', 'clinico', 'raio-x'],
+            ['ficha', 'triagem', 'pediatra', 'urina'],
+            ['ficha', 'triagem', 'pediatra', 'raio-x', 'eletro'],
+            ['ficha', 'triagem', 'clinico', 'eletro'],
+            ['ficha', 'triagem', 'clinico', 'raio-x', 'eletro', 'clinico'],
+            ['ficha', 'triagem', 'clinico', 'raio-x', 'exame_sangue', 'eletro', 'clinico', 'saida'],
+            ['ficha', 'triagem', 'pediatra', 'eletro', 'raio-x'],
+            ['ficha', 'triagem', 'clinico', 'eletro', 'urina'],
+            ['ficha', 'triagem', 'clinico', 'eletro'],
+            ['ficha', 'triagem', 'clinico', 'eletro', 'raio-x'],
+            ['ficha', 'triagem', 'clinico', 'aplicar_medicacao', 'tomar_medicacao', 'urina', 'raio-x', 'clinico','saida'],
+            ['ficha', 'triagem', 'clinico', 'eletro', 'exame_sangue', 'raio-x', 'clinico', 'saida'],
+            ['ficha', 'triagem', 'clinico', 'urina', 'raio-x'],
+            ['ficha', 'triagem', 'clinico', 'urina'],
+            ['ficha', 'triagem'],
+            ['ficha', 'triagem', 'pediatra', 'raio-x'],
+            ['ficha', 'triagem', 'pediatra', 'eletro', 'raio-x'],
+            ['ficha', 'triagem', 'pediatra', 'raio-x'],
+            ['ficha', 'triagem', 'clinico', 'exame_sangue'],
+            ['ficha', 'triagem', 'clinico', 'raio-x', 'clinico'],
+            ['ficha', 'triagem', 'clinico', 'urina', 'exame_sangue'],
+            ['ficha', 'triagem', 'pediatra', 'raio-x', 'urina', 'exame_sangue', 'pediatra', 'saida'],
+            ['ficha', 'triagem', 'pediatra', 'eletro'],
+            ['ficha', 'triagem', 'clinico', 'raio-x', 'eletro'],
+            ['ficha', 'triagem', 'clinico', 'urina'],
+            ['ficha', 'triagem', 'clinico', 'urina'],
+            ['ficha', 'triagem', 'clinico', 'eletro', 'urina'],
+            ['ficha', 'triagem', 'pediatra', 'raio-x', 'urina'],
+            ['ficha', 'triagem', 'clinico', 'eletro'],
+            ['ficha', 'triagem'],
+            ['ficha', 'triagem', 'clinico', 'urina', 'exame_sangue'],
+            ['ficha', 'triagem', 'clinico', 'urina'],
+            ['ficha'],
+
+        ]
 
 
         for ent in self.entidades.lista_entidades:
             fluxo = [f["processo"] for f in ent.estatisticas if f["processo"] != "aguarda_resultado_exame"]
             if fluxo not in possiveis_fluxos:
-                print(fluxo)
+                print(f'{ent.nome}: {fluxo}')
+        b=0
+
 
 class EstatisticasSistema():
     def __init__(self):
@@ -343,25 +399,27 @@ class Entidade_individual(Entidades):
 
 
     def fecha_ciclo(self, processo):
-        if not processo == "saida_sistema":
-            aux_dados = {"entidade": self.nome,
-                         "processo": processo,
-                         "entra_fila": self.entra_fila,
-                         "sai_fila": self.sai_fila,
-                         "tempo_fila": self.sai_fila - self.entra_fila,
-                         "entra_processo": self.sai_fila,
-                         "sai_processo": self.sai_processo,
-                         "tempo_processando": self.sai_processo - self.entra_processo,
-                         "time_slot" : self.time_slot}
+        aux_dados = {"entidade": self.nome,
+                     "processo": processo,
+                     "entra_fila": self.entra_fila,
+                     "sai_fila": self.sai_fila,
+                     "tempo_fila": self.sai_fila - self.entra_fila,
+                     "entra_processo": self.sai_fila,
+                     "sai_processo": self.sai_processo,
+                     "tempo_processando": self.sai_processo - self.entra_processo,
+                     "time_slot" : self.time_slot}
 
-            self.estatisticas.append(aux_dados)
-            self.entra_fila: float = 0.0
-            self.sai_fila: float = 0.0
-            self.entra_processo: float = 0.0
-            self.sai_processo: float = 0.0
-
-        else:
+        self.estatisticas.append(aux_dados)
+        self.entra_fila: float = 0.0
+        self.sai_fila: float = 0.0
+        self.entra_processo: float = 0.0
+        self.sai_processo: float = 0.0
+        if  processo == "saida_sistema":
             self.tempo_sistema = self.saida_sistema - self.entrada_sistema
+
+
+
+
 
 class Recursos:
     def __init__(self, recursos, env):
