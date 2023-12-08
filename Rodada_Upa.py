@@ -43,17 +43,17 @@ if __name__ == "__main__":
         coef_processos = 60 #Conversão para minutos!!
         coef_chegadas = 60
         coef_checkin = 60
-        dados = {"chegada":expovariate(0.0026),
+        dados = {"chegada":expovariate(0.0028),
                  "ficha": random.triangular(2*coef_chegadas, 7*coef_chegadas, 4*coef_chegadas),
                  "triagem": random.triangular(4*coef_chegadas, 9 * coef_chegadas, 7 * coef_chegadas),
-                 "clinico": random.triangular(5*coef_chegadas, 15 * coef_chegadas, 10 * coef_chegadas),
+                 "clinico": random.triangular(10*coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
                  "pediatra": random.triangular(8*coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
-                 "raio-x": 5 * coef_chegadas,
+                 "raio-x": 5 * coef_chegadas, #Cinco minutos
                  "eletro": 12 * coef_chegadas,
                  "urina": 2 * coef_chegadas,
                  "exame_sangue": 3 * coef_chegadas,
-                 "analise_sangue_externo":  4 * 60 * coef_chegadas,
-                 "analise_sangue_interno": 2 * 60 * coef_chegadas,
+                 "analise_sangue_externo":  0.25 * 60 * coef_chegadas, #Quatro horas, mas reduzi pra meia ho
+                 "analise_sangue_interno": 0.1 * 60 * coef_chegadas,
                  "analise_urina": 2 * 60 * coef_chegadas,
                  "aplicar_medicacao": random.triangular(10*coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas),
                  "tomar_medicacao": random.triangular(5*coef_chegadas, 40 * coef_chegadas, 15 * coef_chegadas),
@@ -77,9 +77,9 @@ if __name__ == "__main__":
         # 5 - menos grave e 1 - mais grave
         classificacao_prioridade = [[5, 0.032],
                                     [4, 0.001],
-                                    [3, 0.80129],
-                                    [2, 0.150],
-                                    [1, 0.017]]
+                                    [3, 0.60129],
+                                    [2, 0.250],
+                                    [1, 0.117]]
 
         #saida do sistema após o clinico
         decisao_apos_clinico = [["saida", 0.4],
@@ -128,10 +128,10 @@ if __name__ == "__main__":
                              ["urina", 0.1]]
 
         #Decisao para tempo de espera do resultado do exame de sangue!!!!
-        analise_de_sangue = [[4 * 60 * 60, 0.5],
-                             [2 * 60 * 60, 0.5]]
+        analise_de_sangue = [[0.5 * 60 * 60, 0.5],
+                             [0.25 * 60 * 60, 0.5]]
 
-        analise_urina = [[2 * 60 * 60, 1]]
+        analise_urina = [[0.25 * 60 * 60, 1]]
 
 
         dict_atr = {"decide_atendimento": calcula(classificacao_clinico_pediatra),
@@ -173,8 +173,8 @@ if __name__ == "__main__":
 
     distribuicoes_probabilidade = calcula_distribuicoes_prob()
 
-    recursos = {"secretaria": [4, False],
-                "enfermeira_triagem": [4,False],
+    recursos = {"secretaria": [2, False],
+                "enfermeira_triagem": [2,False],
                 "clinico": [3,True],
                 "pediatra": [3,True],
                 "raio-x": [1, True],
@@ -183,7 +183,7 @@ if __name__ == "__main__":
                 "espaco_medicacao": [8, True]
                 }
 
-    tempo = 24 * 60 * 60
+    tempo = 24 * 60 * 60 * 30
     necessidade_recursos = {"ficha": ["secretaria"],
                             "triagem": ["enfermeira_triagem"],
                             "clinico": ["clinico"],
@@ -194,8 +194,23 @@ if __name__ == "__main__":
                             "analise_sangue_externo": [],
                             "analise_sangue_interno": [],
                             "analise_urina": [],
-                            "aplicar_medicacao": ["espaco_medicacao", "tecnica_enfermagem"],
-                            "tomar_medicacao" : ["tecnica_enfermagem"], #TODO: pensar em como fazer para liberar apenas 1 requests para liberar apenas a medicação!
+                            "aplicar_medicacao": ["tecnica_enfermagem", "espaco_medicacao"],
+                            "tomar_medicacao" : [],
+                            "eletro": ["eletro"]
+                            }
+
+    liberacao_recursos = {"ficha": ["secretaria"],
+                            "triagem": ["enfermeira_triagem"],
+                            "clinico": ["clinico"],
+                            "pediatra": ["pediatra"],
+                            "raio-x" : ["raio-x"],
+                            "urina" : [],
+                            "exame_sangue": ["tecnica_enfermagem"],
+                            "analise_sangue_externo": [],
+                            "analise_sangue_interno": [],
+                            "analise_urina": [],
+                            "aplicar_medicacao": ["tecnica_enfermagem"],
+                            "tomar_medicacao" : ["espaco_medicacao"], #TODO: pensar em como fazer para liberar apenas 1 requests para liberar apenas a medicação!
                             "eletro": ["eletro"]
                             }
 
@@ -204,7 +219,7 @@ if __name__ == "__main__":
                             "urina": "tempo_resultado_exame_urina"
                         }
 
-    seed(1)
+    seed(1000)
     simulacao = Simulacao(distribuicoes=distribuicoes,
                           imprime=True,
                           recursos=recursos,
@@ -212,8 +227,8 @@ if __name__ == "__main__":
                           tempo=tempo,
                           necessidade_recursos=necessidade_recursos,
                           ordem_processo=ordem_processo,
-                          decisoes={},
-                          atribuicoes=atribuicoes_processo
+                          atribuicoes=atribuicoes_processo,
+                          liberacao_recurso=liberacao_recursos
                           )
 
     replicacoes = 1  # corridas * quantidade de dias. Essa é a maneira certa?

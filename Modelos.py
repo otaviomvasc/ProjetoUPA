@@ -10,7 +10,7 @@ from collections import defaultdict
 
 class Simulacao():
     def __init__(self, distribuicoes, imprime, recursos, dist_prob, tempo, necessidade_recursos, ordem_processo,
-                 decisoes, atribuicoes):
+                  atribuicoes, liberacao_recurso):
         self.env = simpy.Environment()
         self.distribuicoes = distribuicoes
         self.entidades = Entidades()
@@ -22,8 +22,8 @@ class Simulacao():
         self.tempo = tempo
         self.necessidade_recursos = necessidade_recursos
         self.proximo_processo = ordem_processo
-        self.decisoes = decisoes
         self.atribuicoes_por_processo = atribuicoes
+        self.recursos_liberados_processo = liberacao_recurso
 
     def comeca_simulacao(self):
         self.env.process(self.gera_chegadas())
@@ -43,11 +43,12 @@ class Simulacao():
 
         entidade_individual.entra_fila = self.env.now
 
+        #TODO: alterei o get para primeiro buscar se tem prioridade retorno.Caso não exista a chave no dicionario de atributos, buscara a prioridade de atendimento normal. Optei por deixar explicito!
         requests_recursos = [self.recursos[recurso_humando].request() if type(self.recursos[recurso_humando]) == simpy.resources.resource.Resource
-                             else self.recursos[recurso_humando].request(priority=entidade_individual.atributos['prioridade'])
+                             else self.recursos[recurso_humando].request(priority=entidade_individual.atributos.get("prioridade_retorno",entidade_individual.atributos.get('prioridade', 5)))
                              for recurso_humando in self.necessidade_recursos[processo]]
 
-
+        entidade_individual.lista_requests.extend(requests_recursos) #Salvando requests na entidade para conseguir liberar um request em outro processo!!
         for request in requests_recursos:
             yield request
 
@@ -62,9 +63,11 @@ class Simulacao():
         yield self.env.timeout(self.distribuicoes(processo=processo))
 
         #release
-        for i in range(len(self.necessidade_recursos[processo])):
-            self.recursos_est.fecha_ciclo(nome_recurso=self.necessidade_recursos[processo][i], momento=self.env.now, inicio_utilizacao=requests_recursos[i].usage_since)
-            self.recursos[self.necessidade_recursos[processo][i]].release(requests_recursos[i])
+        for rec in self.recursos_liberados_processo[processo]: #também deletar da entidade o requests e não buscar mais pelo request_recursos
+            req_recurso_liberado = next(req_recurso for req_recurso in entidade_individual.lista_requests if rec == req_recurso.resource.nome)
+            self.recursos_est.fecha_ciclo(nome_recurso=rec,momento=self.env.now, inicio_utilizacao=req_recurso_liberado.usage_since)
+            self.recursos[rec].release(req_recurso_liberado)
+            entidade_individual.lista_requests.remove(req_recurso_liberado) #Manter requests para serem removidos em outros métodos
 
 
         entidade_individual.sai_processo = self.env.now
@@ -87,7 +90,7 @@ class Simulacao():
             entidade_individual.entra_fila = self.env.now
             entidade_individual.processo_atual = "aguarda_resultado_exame"
             yield self.env.timeout(proximo_processo) #Aguarda tempo do resultado do exame!!!
-            entidade_individual.atributos["prioridade"] = 2  #Pacientes com retorno tem maior prioridade
+            entidade_individual.atributos["prioridade_retorno"] = 3  #Pacientes com retorno tem maior prioridade - Verificar se saída dos outros exames está sendo setado!!!
             entidade_individual.atributos["retorno"] = True
             entidade_individual.sai_fila = self.env.now
             entidade_individual.fecha_ciclo(processo="aguarda_resultado_exame")
@@ -105,10 +108,7 @@ class Simulacao():
 
     def retorna_prob(self, processo):
         aleatorio = random.random()
-        try:
-            return next(pr[2] for pr in self.dist_probabilidade[processo] if aleatorio >= pr[0] and aleatorio <= pr[1])
-        except:
-            a=0
+        return next(pr[2] for pr in self.dist_probabilidade[processo] if aleatorio >= pr[0] and aleatorio <= pr[1])
 
     def decide_proximo_processo(self, processo, entidade):
 
@@ -124,12 +124,13 @@ class Simulacao():
             if decisao == "decide_atendimento":
                 entidade.atributos["tipo_atendimento"] = aux
             if aux == "medico":
-                entidade.atributos["retorno"] = True #Pacientes que já fizeram seus exames e agora vão fazer retorno para o médico e depois saem do sistema
+                entidade.atributos["retorno"] = True
+                entidade.atributos["prioridade_retorno"] = 3 #Pacientes que já fizeram seus exames e agora vão fazer retorno para o médico e depois saem do sistema
                 if "tempo_resultado_exame_sangue" in entidade.atributos.keys(): #tempo de espera para resultados do exame de sangue (interno ou externo)
-                    tempo_espera =  entidade.atributos["tempo_resultado_exame_sangue"] - self.env.now
+                    tempo_espera =  entidade.atributos["tempo_resultado_exame_sangue"] - self.env.now if  self.env.now < entidade.atributos["tempo_resultado_exame_sangue"] else 0
                     return tempo_espera
                 elif "tempo_resultado_exame_urina" in entidade.atributos.keys(): #tempo de espera para resultados do exame de urina
-                    tempo_espera =  entidade.atributos["tempo_resultado_exame_urina"] - self.env.now
+                    tempo_espera =  entidade.atributos["tempo_resultado_exame_urina"] - self.env.now if  self.env.now < entidade.atributos["tempo_resultado_exame_urina"] else 0
                     return tempo_espera
                 else:
                     return entidade.atributos['tipo_atendimento']
@@ -181,6 +182,24 @@ class Simulacao():
 
         fig = px.bar(df_tempo_fila_prioridade_por_processo, x='prioridade_paciente', color="processo", y="tempo_fila", title='Media de tempo em fila por prioridade de Atendimento por processo')
         fig.show()
+
+
+        #Gráficos de quantidade de atendimentos realizados por priorização
+        df_base_quantitativo = self.entidades.df_entidades.loc[self.entidades.df_entidades.processo == 'ficha'].reset_index()
+        df_quantidade_prioridade = df_base_quantitativo.groupby(by=['prioridade_paciente']).agg(
+            {"entidade": pd.Series.count}).reset_index()
+
+        fig = px.bar(df_quantidade_prioridade, x='prioridade_paciente', y="entidade", title='Total de pacientes atendidos por priorização ')
+        fig.show()
+
+        # Gráficos de quantidade de atendimentos realizados por priorização e por processo.
+        df_quantidade_prioridade_por_processo = self.entidades.df_entidades.groupby(by=['prioridade_paciente', 'processo']).agg(
+            {"entidade": pd.Series.count}).reset_index()
+
+
+        fig = px.bar(df_quantidade_prioridade_por_processo, x='prioridade_paciente', color="processo", y="entidade", title='Total de atendimentos por prioridade de Atendimento por processo')
+        fig.show()
+
 
     def confirma_fluxos(self):
 
@@ -396,6 +415,7 @@ class Entidade_individual(Entidades):
         self.tempo_sistema = 0
         self.atributos: defaultdict = {}
         self.processo_atual: str
+        self.lista_requests: list() = []
 
 
     def fecha_ciclo(self, processo):
