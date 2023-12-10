@@ -43,10 +43,10 @@ if __name__ == "__main__":
         coef_processos = 60 #Conversão para minutos!!
         coef_chegadas = 60
         coef_checkin = 60
-        dados = {"chegada":expovariate(0.0028),
-                 "ficha": random.triangular(2*coef_chegadas, 7*coef_chegadas, 4*coef_chegadas),
-                 "triagem": random.triangular(4*coef_chegadas, 9 * coef_chegadas, 7 * coef_chegadas),
-                 "clinico": random.triangular(10*coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
+        dados = {"chegada":expovariate(0.0029),
+                 "ficha": random.triangular(2*2.12*coef_chegadas, 7*2.12*coef_chegadas, 4*2.12*coef_chegadas),
+                 "triagem": random.triangular(4*1.6*coef_chegadas, 9 * 1.6 * coef_chegadas, 7 * 1.6 * coef_chegadas),
+                 "clinico": random.triangular(10*1*coef_chegadas, 20 * 1* coef_chegadas, 15 * 1* coef_chegadas),
                  "pediatra": random.triangular(8*coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
                  "raio-x": 5 * coef_chegadas, #Cinco minutos
                  "eletro": 12 * coef_chegadas,
@@ -77,8 +77,8 @@ if __name__ == "__main__":
         # 5 - menos grave e 1 - mais grave
         classificacao_prioridade = [[5, 0.032],
                                     [4, 0.001],
-                                    [3, 0.60129],
-                                    [2, 0.250],
+                                    [3, 0.70129],
+                                    [2, 0.150],
                                     [1, 0.117]]
 
         #saida do sistema após o clinico
@@ -150,6 +150,7 @@ if __name__ == "__main__":
         return dict_atr
 
 
+    #seed(80)
     ordem_processo = {
         "ficha": "triagem",
         "triagem": ["decide_atendimento"],
@@ -176,7 +177,7 @@ if __name__ == "__main__":
     recursos = {"secretaria": [2, False],
                 "enfermeira_triagem": [2,False],
                 "clinico": [3,True],
-                "pediatra": [3,True],
+                "pediatra": [2,True],
                 "raio-x": [1, True],
                 "eletro": [1, True],
                 "tecnica_enfermagem": [2, True],
@@ -219,20 +220,22 @@ if __name__ == "__main__":
                             "urina": "tempo_resultado_exame_urina"
                         }
 
-    seed(1000)
+    warmup = 500000
+
     simulacao = Simulacao(distribuicoes=distribuicoes,
-                          imprime=True,
+                          imprime=False,
                           recursos=recursos,
                           dist_prob=distribuicoes_probabilidade,
                           tempo=tempo,
                           necessidade_recursos=necessidade_recursos,
                           ordem_processo=ordem_processo,
                           atribuicoes=atribuicoes_processo,
-                          liberacao_recurso=liberacao_recursos
+                          liberacao_recurso=liberacao_recursos,
+                          warmup = warmup
                           )
 
-    replicacoes = 1  # corridas * quantidade de dias. Essa é a maneira certa?
-    warmup = 0  # Pensei em criar essa forma como porcentagem por tempo, mas o artigo simula de forma continua e indica o warmup como 13 semanas
+    replicacoes = 30  # corridas * quantidade de dias. Essa é a maneira certa?
+     # Pensei em criar essa forma como porcentagem por tempo, mas o artigo simula de forma continua e indica o warmup como 13 semanas
     CorridaSimulacao = CorridaSimulacao(
         replicacoes=replicacoes,
         simulacao=simulacao,
@@ -241,3 +244,4 @@ if __name__ == "__main__":
     )
 
     CorridaSimulacao.roda_simulacao()
+    CorridaSimulacao.fecha_estatisticas_experimento()

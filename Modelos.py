@@ -10,7 +10,7 @@ from collections import defaultdict
 
 class Simulacao():
     def __init__(self, distribuicoes, imprime, recursos, dist_prob, tempo, necessidade_recursos, ordem_processo,
-                  atribuicoes, liberacao_recurso):
+                  atribuicoes, liberacao_recurso, warmup=0):
         self.env = simpy.Environment()
         self.distribuicoes = distribuicoes
         self.entidades = Entidades()
@@ -24,6 +24,7 @@ class Simulacao():
         self.proximo_processo = ordem_processo
         self.atribuicoes_por_processo = atribuicoes
         self.recursos_liberados_processo = liberacao_recurso
+        self.warmup=warmup
 
     def comeca_simulacao(self):
         self.env.process(self.gera_chegadas())
@@ -138,11 +139,11 @@ class Simulacao():
             return aux
 
     def finaliza_todas_estatisticas(self):
-        self.entidades.fecha_estatisticas()
-        self.recursos_est.fecha_estatisticas()
-        self.estatisticas_sistema.fecha_estatisticas()
+        self.entidades.fecha_estatisticas(warmup=self.warmup)
+        self.recursos_est.fecha_estatisticas(warmup=self.warmup)
+        self.estatisticas_sistema.fecha_estatisticas(warmup=self.warmup)
 
-    def gera_graficos(self):
+    def gera_graficos(self,n):
         #Graficos de WIP, entrada e saída
         def retorna_prioridade(paciente, lista_entidades):
             try:
@@ -151,38 +152,57 @@ class Simulacao():
             except KeyError:
                 return "Nao Passou da Triagem"
 
+        def analises_tempo_artigo():
+            #tempo médio espera para ficha e triagem
+            tempo_medio_ficha_e_triagem = np.mean(self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo == "ficha") | (
+                        self.entidades.df_entidades.processo == "triagem"))]['tempo_fila'])/60
+            print(f'{tempo_medio_ficha_e_triagem = } minutos')
+
+            #tempo_medio_de_espera_para_pacientes:
+            print('-' * 90)
+            df_aux = self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo != "ficha") | (
+                        self.entidades.df_entidades.processo != "triagem"))]
+
+            df_tempo_fila_prioridade = df_aux.groupby(by=['prioridade_paciente']).agg(
+                {"tempo_fila": "mean"}).reset_index()
+            print(f'{df_tempo_fila_prioridade =}')
+
+        self.entidades.df_entidades['prioridade_paciente'] = self.entidades.df_entidades.apply(
+            lambda x: retorna_prioridade(x.entidade, self.entidades.lista_entidades), axis=1)
+
+        analises_tempo_artigo()
         fig = px.line(self.estatisticas_sistema.df_entidades_brutas,
                       x="discretizacao", y="WIP", title='Grafico de WIP')
-        fig.show()
+        #fig.show()
 
         # GRÁFICOS DE UTILIZAÇÃO
         fig = px.line(self.recursos_est.df_estatisticas_recursos,
                       x="T", y="utilizacao", color="recurso", title='Grafico de Utilizacao Total dos Recursos')
-        fig.show()
-
+        #fig.show()
 
 
         #GRÁFICOS TEMPO DE FILA
-        self.entidades.df_entidades['prioridade_paciente'] = self.entidades.df_entidades.apply(lambda x: retorna_prioridade(x.entidade, self.entidades.lista_entidades), axis=1)
+
         df_tempo_fila_time_slot = self.entidades.df_entidades.groupby(by=['processo']).agg({"tempo_fila":"mean"}).reset_index()
         fig = px.bar(df_tempo_fila_time_slot,x='processo', y="tempo_fila", title='Media de tempo em fila por processo')
-        fig.show()
+        #fig.show()
 
         #Média do tempo em fila por nível de prioridade
         df_tempo_fila_prioridade = self.entidades.df_entidades.groupby(by=['prioridade_paciente']).agg(
             {"tempo_fila": "mean"}).reset_index()
 
         fig = px.bar(df_tempo_fila_prioridade, x='prioridade_paciente', y="tempo_fila", title='Media de tempo em fila por prioridade de Atendimento')
-        fig.show()
+        #fig.show()
 
 
-        df_tempo_fila_prioridade_por_processo = self.entidades.df_entidades.groupby(by=['prioridade_paciente', 'processo']).agg(
+        df_tempo_fila_prioridade_por_processo = self.entidades.df_entidades.loc[self.entidades.df_entidades.entra_fila > 500000]
+        df_tempo_fila_prioridade_por_processo = df_tempo_fila_prioridade_por_processo.groupby(by=['prioridade_paciente', 'processo']).agg(
             {"tempo_fila": "mean"}).reset_index()
 
-
+        df_tempo_fila_prioridade_por_processo['n'] = n
+        return df_tempo_fila_prioridade_por_processo
         fig = px.bar(df_tempo_fila_prioridade_por_processo, x='prioridade_paciente', color="processo", y="tempo_fila", title='Media de tempo em fila por prioridade de Atendimento por processo')
         fig.show()
-
 
         #Gráficos de quantidade de atendimentos realizados por priorização
         df_base_quantitativo = self.entidades.df_entidades.loc[self.entidades.df_entidades.processo == 'ficha'].reset_index()
@@ -195,7 +215,6 @@ class Simulacao():
         # Gráficos de quantidade de atendimentos realizados por priorização e por processo.
         df_quantidade_prioridade_por_processo = self.entidades.df_entidades.groupby(by=['prioridade_paciente', 'processo']).agg(
             {"entidade": pd.Series.count}).reset_index()
-
 
         fig = px.bar(df_quantidade_prioridade_por_processo, x='prioridade_paciente', color="processo", y="entidade", title='Total de atendimentos por prioridade de Atendimento por processo')
         fig.show()
@@ -347,7 +366,7 @@ class EstatisticasSistema():
         self.entidades_sistema = list()
         self.df_entidades_brutas = pd.DataFrame()
 
-    def fecha_estatisticas(self):
+    def fecha_estatisticas(self, warmup=0):
         print(f'Chegadas: {self.chegadas}')
         print(f'Saídas: {self.saidas}')
         print(f'WIP: {self.WIP} ')
@@ -359,6 +378,7 @@ class EstatisticasSistema():
 
         self.df_entidades_brutas = pd.DataFrame(self.entidades_sistema)
         self.df_estatisticas_simulacao = pd.DataFrame([dict_aux])
+        self.df_entidades_brutas = self.df_entidades_brutas.loc[self.df_entidades_brutas.discretizacao > warmup]
 
     def computa_chegadas(self, momento):
         #TODO: Adaptar para computar chegadas de mais de um indivíduo!!!!
@@ -381,14 +401,14 @@ class Entidades:
         self.df_entidades = pd.DataFrame()
         self.resultados_entidades = pd.DataFrame()
 
-    def fecha_estatisticas(self):
+    def fecha_estatisticas(self, warmup=0):
         def printa_media(coluna):
             res = round(np.mean(self.df_entidades[coluna]),2)
             print(f'{coluna} : {res/60} minutos')
 
         tempo_sistema = list() #TODO:Loop está muito lento. Melhorar!
         self.df_entidades = pd.DataFrame([est for ent in self.lista_entidades for est in ent.estatisticas])
-
+        self.df_entidades = self.df_entidades.loc[self.df_entidades.entra_fila > warmup]
 
         dict_estatisticas_calculadas = {"tempo_sistema":np.mean([ent.saida_sistema - ent.entrada_sistema for ent in self.lista_entidades if ent.saida_sistema > 1]),
         "tempo_processamento":round(np.mean(self.df_entidades['tempo_processando']),2),
@@ -481,14 +501,14 @@ class Recursos:
 
         recurso.estatisticas.append(dict_aux)
 
-    def fecha_estatisticas(self):
+    def fecha_estatisticas(self, warmup=0):
         for nome, rec in self.recursos.items():
             df_aux = pd.DataFrame(rec.estatisticas)
             print(f'Utilizacao Média do recurso {nome}: {round(np.mean(df_aux["utilizacao"]),2)*100}%')
             print(f'Média da Fila do recurso {nome}: {round(np.mean(df_aux["tamanho_fila"]) / 60)} minutos')
             df_aux['recurso'] = nome
             self.df_estatisticas_recursos = pd.concat([self.df_estatisticas_recursos, df_aux])
-        b=0
+        self.df_estatisticas_recursos = self.df_estatisticas_recursos.loc[self.df_estatisticas_recursos['T'] > warmup]
 
 class CorridaSimulacao():
     def __init__(self, replicacoes, simulacao: Simulacao, duracao_simulacao, periodo_warmup):
@@ -500,6 +520,7 @@ class CorridaSimulacao():
         self.duracao_simulacao = duracao_simulacao
         self.simulacoes = [deepcopy(simulacao) for i in range(replicacoes)]
         self.periodo_warmup = periodo_warmup
+        self.dados = pd.DataFrame()
     def roda_simulacao(self):
         for n_sim in range(len(self.simulacoes)):
             print(f'Simulação {n_sim + 1}')
@@ -508,9 +529,21 @@ class CorridaSimulacao():
             simulacao.comeca_simulacao()
             simulacao.env.run(until=simulacao.tempo)
             simulacao.finaliza_todas_estatisticas()
-            if len(self.simulacoes) == 1:
-                simulacao.confirma_fluxos()
-                simulacao.gera_graficos()
+            #if len(self.simulacoes) == 1:
+                #simulacao.confirma_fluxos()
+            dados = simulacao.gera_graficos(n_sim)
+            self.dados = pd.concat([dados, self.dados])
+
+        media_fim = self.dados.groupby(by=['prioridade_paciente', 'processo' ]).agg({'tempo_fila': 'mean'}).reset_index()
+        fig = px.bar(media_fim, x='prioridade_paciente', color="processo", y="tempo_fila",
+                     title='Media de tempo em fila por prioridade de Atendimento por processo')
+        fig.show()
+
+        media_fim['tempo_fila'] = media_fim['tempo_fila'] / 60
+        media_acolhimento = np.mean(media_fim.loc[((media_fim.processo == 'triagem') | (media_fim.processo == "ficha"))]['tempo_fila'])
+        print(f'{media_acolhimento = }')
+        print(media_fim.loc[media_fim.processo == 'clinico'])
+
 
     def fecha_estatisticas_experimento(self):
         def calc_ic(lista):
