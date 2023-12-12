@@ -535,11 +535,12 @@ class CorridaSimulacao():
             self.dados = pd.concat([dados, self.dados])
 
         media_fim = self.dados.groupby(by=['prioridade_paciente', 'processo' ]).agg({'tempo_fila': 'mean'}).reset_index()
+        media_fim['tempo_fila'] = media_fim['tempo_fila'] / 60
         fig = px.bar(media_fim, x='prioridade_paciente', color="processo", y="tempo_fila",
                      title='Media de tempo em fila por prioridade de Atendimento por processo')
         fig.show()
 
-        media_fim['tempo_fila'] = media_fim['tempo_fila'] / 60
+
         media_acolhimento = np.mean(media_fim.loc[((media_fim.processo == 'triagem') | (media_fim.processo == "ficha"))]['tempo_fila'])
         print(f'{media_acolhimento = }')
         print(media_fim.loc[media_fim.processo == 'clinico'])
