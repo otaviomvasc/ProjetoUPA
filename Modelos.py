@@ -6,6 +6,7 @@ import plotly.express as px
 import pandas as pd
 from copy import deepcopy
 from collections import defaultdict
+import matplotlib.pyplot as plt
 
 
 class Simulacao():
@@ -143,7 +144,7 @@ class Simulacao():
         self.recursos_est.fecha_estatisticas(warmup=self.warmup)
         self.estatisticas_sistema.fecha_estatisticas(warmup=self.warmup)
 
-    def gera_graficos(self,n):
+    def gera_graficos(self,n, plota):
         #Graficos de WIP, entrada e saída
         def retorna_prioridade(paciente, lista_entidades):
             try:
@@ -170,54 +171,42 @@ class Simulacao():
         self.entidades.df_entidades['prioridade_paciente'] = self.entidades.df_entidades.apply(
             lambda x: retorna_prioridade(x.entidade, self.entidades.lista_entidades), axis=1)
 
-        analises_tempo_artigo()
-        fig = px.line(self.estatisticas_sistema.df_entidades_brutas,
-                      x="discretizacao", y="WIP", title='Grafico de WIP')
-        #fig.show()
+        if plota:
+            analises_tempo_artigo()
+            fig = px.line(self.estatisticas_sistema.df_entidades_brutas,
+                          x="discretizacao", y="WIP", title='Grafico de WIP')
+            fig.show()
 
-        # GRÁFICOS DE UTILIZAÇÃO
-        fig = px.line(self.recursos_est.df_estatisticas_recursos,
-                      x="T", y="utilizacao", color="recurso", title='Grafico de Utilizacao Total dos Recursos')
-        #fig.show()
-
-
-        #GRÁFICOS TEMPO DE FILA
-
-        df_tempo_fila_time_slot = self.entidades.df_entidades.groupby(by=['processo']).agg({"tempo_fila":"mean"}).reset_index()
-        fig = px.bar(df_tempo_fila_time_slot,x='processo', y="tempo_fila", title='Media de tempo em fila por processo')
-        #fig.show()
-
-        #Média do tempo em fila por nível de prioridade
-        df_tempo_fila_prioridade = self.entidades.df_entidades.groupby(by=['prioridade_paciente']).agg(
-            {"tempo_fila": "mean"}).reset_index()
-
-        fig = px.bar(df_tempo_fila_prioridade, x='prioridade_paciente', y="tempo_fila", title='Media de tempo em fila por prioridade de Atendimento')
-        #fig.show()
+            # GRÁFICOS DE UTILIZAÇÃO
+            fig = px.line(self.recursos_est.df_estatisticas_recursos,
+                          x="T", y="utilizacao", color="recurso", title='Grafico de Utilizacao Total dos Recursos')
+            fig.show()
 
 
-        df_tempo_fila_prioridade_por_processo = self.entidades.df_entidades.loc[self.entidades.df_entidades.entra_fila > 500000]
-        df_tempo_fila_prioridade_por_processo = df_tempo_fila_prioridade_por_processo.groupby(by=['prioridade_paciente', 'processo']).agg(
-            {"tempo_fila": "mean"}).reset_index()
+            #GRÁFICOS TEMPO DE FILA
 
-        df_tempo_fila_prioridade_por_processo['n'] = n
-        return df_tempo_fila_prioridade_por_processo
-        fig = px.bar(df_tempo_fila_prioridade_por_processo, x='prioridade_paciente', color="processo", y="tempo_fila", title='Media de tempo em fila por prioridade de Atendimento por processo')
-        fig.show()
+            df_tempo_fila_time_slot = self.entidades.df_entidades.groupby(by=['processo']).agg({"tempo_fila":"mean"}).reset_index()
+            fig = px.bar(df_tempo_fila_time_slot,x='processo', y="tempo_fila", title='Media de tempo em fila por processo')
+            fig.show()
 
-        #Gráficos de quantidade de atendimentos realizados por priorização
-        df_base_quantitativo = self.entidades.df_entidades.loc[self.entidades.df_entidades.processo == 'ficha'].reset_index()
-        df_quantidade_prioridade = df_base_quantitativo.groupby(by=['prioridade_paciente']).agg(
-            {"entidade": pd.Series.count}).reset_index()
+            #Média do tempo em fila por nível de prioridade
+            df_tempo_fila_prioridade = self.entidades.df_entidades.groupby(by=['prioridade_paciente']).agg(
+                {"tempo_fila": "mean"}).reset_index()
 
-        fig = px.bar(df_quantidade_prioridade, x='prioridade_paciente', y="entidade", title='Total de pacientes atendidos por priorização ')
-        fig.show()
+            fig = px.bar(df_tempo_fila_prioridade, x='prioridade_paciente', y="tempo_fila", title='Media de tempo em fila por prioridade de Atendimento')
+            fig.show()
 
-        # Gráficos de quantidade de atendimentos realizados por priorização e por processo.
-        df_quantidade_prioridade_por_processo = self.entidades.df_entidades.groupby(by=['prioridade_paciente', 'processo']).agg(
-            {"entidade": pd.Series.count}).reset_index()
 
-        fig = px.bar(df_quantidade_prioridade_por_processo, x='prioridade_paciente', color="processo", y="entidade", title='Total de atendimentos por prioridade de Atendimento por processo')
-        fig.show()
+            df_tempo_fila_prioridade_por_processo = self.entidades.df_entidades.loc[self.entidades.df_entidades.entra_fila > 500000]
+            df_tempo_fila_prioridade_por_processo = df_tempo_fila_prioridade_por_processo.groupby(by=['prioridade_paciente', 'processo']).agg(
+                {"tempo_fila": "mean"}).reset_index()
+
+            fig = px.bar(df_tempo_fila_prioridade_por_processo, x='prioridade_paciente', y="tempo_fila",color='processo', title='Media de tempo em fila por prioridade de Atendimento')
+
+            fig.show()
+
+
+            df_tempo_fila_prioridade_por_processo['n'] = n
 
 
     def confirma_fluxos(self):
@@ -406,9 +395,17 @@ class Entidades:
             res = round(np.mean(self.df_entidades[coluna]),2)
             print(f'{coluna} : {res/60} minutos')
 
+        def retorna_prioridade(paciente, lista_entidades):
+            try:
+                prioridade = next(ent.atributos['prioridade'] for ent in lista_entidades if paciente == ent.nome)
+                return prioridade
+            except KeyError:
+                return "Nao Passou da Triagem"
+
         tempo_sistema = list() #TODO:Loop está muito lento. Melhorar!
         self.df_entidades = pd.DataFrame([est for ent in self.lista_entidades for est in ent.estatisticas])
         self.df_entidades = self.df_entidades.loc[self.df_entidades.entra_fila > warmup]
+        self.df_entidades['prioridade'] = self.df_entidades.apply(lambda x: retorna_prioridade(x.entidade, self.lista_entidades),axis=1 )
 
         dict_estatisticas_calculadas = {"tempo_sistema":np.mean([ent.saida_sistema - ent.entrada_sistema for ent in self.lista_entidades if ent.saida_sistema > 1]),
         "tempo_processamento":round(np.mean(self.df_entidades['tempo_processando']),2),
@@ -417,6 +414,7 @@ class Entidades:
         printa_media(coluna='tempo_fila')
         print(f'TS: { dict_estatisticas_calculadas["tempo_sistema"] / 60} minutos') #TODO: Prof considerou a média do tempo que as máquinas sairam da manutenção, já que o sistema é continuo. Confirmar como fica em sistemas não-continuos
         self.resultados_entidades = pd.DataFrame([dict_estatisticas_calculadas])
+
 
 class Entidade_individual(Entidades):
     def __new__(cls, *args, **kwargs):   #Usado para não relacionar um individuo com outro (substituindo o deepcopy)
@@ -456,10 +454,6 @@ class Entidade_individual(Entidades):
         self.sai_processo: float = 0.0
         if  processo == "saida_sistema":
             self.tempo_sistema = self.saida_sistema - self.entrada_sistema
-
-
-
-
 
 class Recursos:
     def __init__(self, recursos, env):
@@ -511,7 +505,7 @@ class Recursos:
         self.df_estatisticas_recursos = self.df_estatisticas_recursos.loc[self.df_estatisticas_recursos['T'] > warmup]
 
 class CorridaSimulacao():
-    def __init__(self, replicacoes, simulacao: Simulacao, duracao_simulacao, periodo_warmup):
+    def __init__(self, replicacoes, simulacao: Simulacao, duracao_simulacao, periodo_warmup, plota_histogramas):
         self.replicacoes: int = replicacoes
         self.df_estatisticas_entidades = pd.DataFrame()  #Lista com cada estatística de cada rodada
         self.df_estatisticas_sistema = pd.DataFrame()
@@ -521,6 +515,7 @@ class CorridaSimulacao():
         self.simulacoes = [deepcopy(simulacao) for i in range(replicacoes)]
         self.periodo_warmup = periodo_warmup
         self.dados = pd.DataFrame()
+        self.plota_graficos_finais = plota_histogramas
     def roda_simulacao(self):
         for n_sim in range(len(self.simulacoes)):
             print(f'Simulação {n_sim + 1}')
@@ -529,23 +524,48 @@ class CorridaSimulacao():
             simulacao.comeca_simulacao()
             simulacao.env.run(until=simulacao.tempo)
             simulacao.finaliza_todas_estatisticas()
-            #if len(self.simulacoes) == 1:
-                #simulacao.confirma_fluxos()
-            dados = simulacao.gera_graficos(n_sim)
-            self.dados = pd.concat([dados, self.dados])
+            if len(self.simulacoes) == 1:
+                simulacao.confirma_fluxos()
+                simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
 
-        media_fim = self.dados.groupby(by=['prioridade_paciente', 'processo' ]).agg({'tempo_fila': 'mean'}).reset_index()
-        media_fim['tempo_fila'] = media_fim['tempo_fila'] / 60
-        fig = px.bar(media_fim, x='prioridade_paciente', color="processo", y="tempo_fila",
-                     title='Media de tempo em fila por prioridade de Atendimento por processo')
+        if self.plota_graficos_finais:
+            self.plota_histogramas()
+        #Passar para abstract que recebe o df e gera os histogramas, a principio apenas tempo de fila por prioridade e talvez por processo!
+
+
+    def plota_histogramas(self):
+
+        for sim in self.simulacoes:
+            df_aux = sim.entidades.df_entidades
+            self.dados = pd.concat([self.dados, df_aux])
+        self.dados = self.dados.loc[self.dados.entra_fila > self.periodo_warmup]
+
+        self.dados['tempo_fila'] = self.dados['tempo_fila']/60
+        dt_aux =  self.dados.loc[self.dados['tempo_fila'] < 50]
+        fig = px.histogram(dt_aux, x="tempo_fila", histnorm='probability density', color="prioridade", marginal="rug", )
         fig.show()
 
 
-        media_acolhimento = np.mean(media_fim.loc[((media_fim.processo == 'triagem') | (media_fim.processo == "ficha"))]['tempo_fila'])
-        print(f'{media_acolhimento = }')
-        print(media_fim.loc[media_fim.processo == 'clinico'])
+        # for pr in pd.unique(self.dados.prioridade):
+        #     dados = self.dados.loc[((self.dados.prioridade == pr) & (self.dados.processo == 'clinico'))]['tempo_fila']
+        #     dados = dados / 60
+        #     plt.hist(dados, 20)
+        #     plt.axvline(np.mean(dados), color='k', linestyle='dashed', linewidth=2)
+        #     plt.title("Tempos de Espera para consulta")
+        #     plt.show()
 
+        if self.plota_graficos_finais:
+            media_fim = self.dados.groupby(by=['prioridade_paciente', 'processo']).agg(
+                {'tempo_fila': 'mean'}).reset_index()
+            media_fim['tempo_fila'] = media_fim['tempo_fila'] / 60
+            fig = px.bar(media_fim, x='prioridade_paciente', color="processo", y="tempo_fila",
+                         title='Media de tempo em fila por prioridade de Atendimento por processo', markers=True)
+            fig.show()
 
+            media_acolhimento = np.mean(
+                media_fim.loc[((media_fim.processo == 'triagem') | (media_fim.processo == "ficha"))]['tempo_fila'])
+            print(f'{media_acolhimento = }')
+            print(media_fim.loc[media_fim.processo == 'clinico'])
     def fecha_estatisticas_experimento(self):
         def calc_ic(lista):
             confidence = 0.95

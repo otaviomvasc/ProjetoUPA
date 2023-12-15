@@ -220,7 +220,7 @@ if __name__ == "__main__":
                             "urina": "tempo_resultado_exame_urina"
                         }
 
-    warmup = 500000
+    warmup = 0
 
     simulacao = Simulacao(distribuicoes=distribuicoes,
                           imprime=False,
@@ -231,16 +231,17 @@ if __name__ == "__main__":
                           ordem_processo=ordem_processo,
                           atribuicoes=atribuicoes_processo,
                           liberacao_recurso=liberacao_recursos,
-                          warmup = warmup
+                          warmup = warmup,
                           )
 
-    replicacoes = 30  # corridas * quantidade de dias. Essa é a maneira certa?
+    replicacoes = 10  # corridas * quantidade de dias. Essa é a maneira certa?
      # Pensei em criar essa forma como porcentagem por tempo, mas o artigo simula de forma continua e indica o warmup como 13 semanas
     CorridaSimulacao = CorridaSimulacao(
         replicacoes=replicacoes,
         simulacao=simulacao,
         duracao_simulacao=tempo,
-        periodo_warmup=warmup
+        periodo_warmup=warmup,
+        plota_histogramas=True
     )
 
     CorridaSimulacao.roda_simulacao()
