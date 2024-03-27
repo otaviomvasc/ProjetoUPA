@@ -119,8 +119,7 @@ if __name__ == "__main__":
         decisao_apos_raio_x = [["medico", 0.7],
                              ["exame_sangue", 0.1],
                              ["eletro", 0.1],
-                             ["urina", 0.1]
-                                             ]
+                             ["urina", 0.1]]
 
         decisao_apos_eletro = [["medico", 0.7],
                              ["exame_sangue", 0.1],
@@ -234,7 +233,7 @@ if __name__ == "__main__":
                           warmup = warmup,
                           )
 
-    replicacoes = 5  # corridas * quantidade de dias. Essa é a maneira certa?
+    replicacoes = 2  # corridas * quantidade de dias. Essa é a maneira certa?
      # Pensei em criar essa forma como porcentagem por tempo, mas o artigo simula de forma continua e indica o warmup como 13 semanas
     CorridaSimulacao = CorridaSimulacao(
         replicacoes=replicacoes,

@@ -208,7 +208,6 @@ class Simulacao():
 
             df_tempo_fila_prioridade_por_processo['n'] = n
 
-
     def confirma_fluxos(self):
 
         possiveis_fluxos =  [
@@ -427,7 +426,6 @@ class Entidades:
         print(f'TS: { dict_estatisticas_calculadas["tempo_sistema"] / 60} minutos') #TODO: Prof considerou a média do tempo que as máquinas sairam da manutenção, já que o sistema é continuo. Confirmar como fica em sistemas não-continuos
         self.resultados_entidades = pd.DataFrame([dict_estatisticas_calculadas])
 
-
 class Entidade_individual(Entidades):
     def __new__(cls, *args, **kwargs):   #Usado para não relacionar um individuo com outro (substituindo o deepcopy)
         return object.__new__(cls)
@@ -532,9 +530,9 @@ class CorridaSimulacao():
         self.df_estatisticas_sistema = pd.DataFrame()
         self.df_estatisticas_recursos = pd.DataFrame()
         self.df_estatistcas_sistemas_brutos = pd.DataFrame()
-        self.duracao_simulacao = duracao_simulacao
+        self.duracao_simulacao = duracao_simulacao #TODO: Tirar do código
         self.simulacoes = [deepcopy(simulacao) for i in range(replicacoes)]
-        self.periodo_warmup = periodo_warmup
+        self.periodo_warmup = periodo_warmup #TODO: Tirar do código
         self.dados = pd.DataFrame()
         self.plota_graficos_finais = plota_histogramas
     def roda_simulacao(self):
@@ -576,11 +574,11 @@ class CorridaSimulacao():
         #     plt.show()
 
 
-        media_fim = self.dados.groupby(by=['prioridade_paciente', 'processo']).agg(
+        media_fim = self.dados.groupby(by=['prioridade', 'processo']).agg(
             {'tempo_fila': 'mean'}).reset_index()
         media_fim['tempo_fila'] = media_fim['tempo_fila'] / 60
-        fig = px.bar(media_fim, x='prioridade_paciente', color="processo", y="tempo_fila",
-                     title='Media de tempo em fila por prioridade de Atendimento por processo', markers=True)
+        fig = px.bar(media_fim, x='prioridade', color="processo", y="tempo_fila",
+                     title='Media de tempo em fila por prioridade de Atendimento por processo') #markers=True)
         fig.show()
 
         media_acolhimento = np.mean(
