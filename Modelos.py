@@ -6,7 +6,7 @@ import plotly.express as px
 import pandas as pd
 from copy import deepcopy
 from collections import defaultdict
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 
 class Simulacao():
@@ -168,18 +168,101 @@ class Simulacao():
                 {"tempo_fila": "mean"}).reset_index()
             print(f'{df_tempo_fila_prioridade =}')
 
+        def converte_segundos_em_dias(x):
+            return x / 86400
+
+        def converte_segundos_em_semanas(x):
+            return x / (86400*7)
+
+        def converte_segundos_em_meses(x):
+            return x / (86400*30)
+
         self.entidades.df_entidades['prioridade_paciente'] = self.entidades.df_entidades.apply(
             lambda x: retorna_prioridade(x.entidade, self.entidades.lista_entidades), axis=1)
 
         if plota:
             analises_tempo_artigo()
-            fig = px.line(self.estatisticas_sistema.df_entidades_brutas,
-                          x="discretizacao", y="WIP", title='Grafico de WIP')
+            #Configuração do plot:
+            CHART_THEME = 'plotly_white'
+            fig = go.Figure()
+            fig.layout.template = CHART_THEME
+            fig.layout.width = 1000
+            #fig.layout.height = 200
+            fig.update_xaxes(title='Duração')
+            duracao_dias = [converte_segundos_em_dias(x) for x in self.estatisticas_sistema.df_entidades_brutas.discretizacao]
+            duracao_semanas = [converte_segundos_em_semanas(x) for x in self.estatisticas_sistema.df_entidades_brutas.discretizacao]
+            duracao_mes = [converte_segundos_em_meses(x) for x in self.estatisticas_sistema.df_entidades_brutas.discretizacao]
+
+            fig.update_layout(title='Gráfico de Entidades no Sistema (WIP)')
+            fig.add_trace(go.Scatter(x=self.estatisticas_sistema.df_entidades_brutas.discretizacao,
+                                    y=self.estatisticas_sistema.df_entidades_brutas.WIP,
+                                     mode='lines',
+                                     name='Total de Entidades no Sistema - Segundos',
+                                     line=dict(color='blue')
+                                  ))
+
+            fig.update_layout(title='Gráfico de Entidades no Sistema (WIP)')
+            fig.add_trace(go.Scatter(x=duracao_dias,
+                                    y=self.estatisticas_sistema.df_entidades_brutas.WIP,
+                                     mode='lines',
+                                     name='Total de Entidades no Sistema - Dias',
+                                    line = dict(color='blue')
+                                  ))
+
+            fig.update_layout(title='Gráfico de Entidades no Sistema (WIP)')
+            fig.add_trace(go.Scatter(x=duracao_semanas,
+                                    y=self.estatisticas_sistema.df_entidades_brutas.WIP,
+                                     mode='lines',
+                                     name='Total de Entidades no Sistema - Semanas',
+                                     line=dict(color='blue')
+                                  ))
+            fig.update_layout(title='Gráfico de Entidades no Sistema (WIP)')
+            fig.add_trace(go.Scatter(x=duracao_mes,
+                                    y=self.estatisticas_sistema.df_entidades_brutas.WIP,
+                                     mode='lines',
+                                     name='Total de Entidades no Sistema - Mês',
+                                     line=dict(color='blue')
+                                  ))
+
             fig.show()
 
+            # fig = px.line(self.estatisticas_sistema.df_entidades_brutas,
+            #               x="discretizacao", y="WIP", title='Grafico de WIP')
+            # fig.show()
+
             # GRÁFICOS DE UTILIZAÇÃO
+
+            # CHART_THEME = 'plotly_white'
+            # fig2 = go.Figure()
+            # fig2.layout.template = CHART_THEME
+            # fig2.layout.width = 1000
+            # # fig.layout.height = 200
+            # fig2.update_xaxes(title='Duração')
+            # duracao = [converte_segundos_em_dias(x) for x in
+            #                 self.recursos_est.df_estatisticas_recursos.T]
+            #
+            # fig2.update_layout(title='Gráfico Utilização dos Recursos')
+            # for rec in pd.unique(self.recursos_est.df_estatisticas_recursos.recurso):
+            #     df = self.recursos_est.df_estatisticas_recursos.loc[
+            #         self.recursos_est.df_estatisticas_recursos.recurso == rec]
+            #     utilizacao = df.utilizacao
+            #     #tempo = df.T
+            #
+            #     fig2.add_trace(go.Scatter(x=self.recursos_est.df_estatisticas_recursos.T,
+            #                              y=utilizacao,
+            #                              mode='lines',
+            #                              name=rec,
+            #                              #line=dict(color='blue')
+            #                           ))
+            # fig2.show()
+
+            #self.recursos_est.df_estatisticas_recursos['T_Dias'] = self.recursos_est.df_estatisticas_recursos.T.apply(lambda x: converte_segundos_em_dias(x))
+
             fig = px.line(self.recursos_est.df_estatisticas_recursos,
-                          x="T", y="utilizacao", color="recurso", title='Grafico de Utilizacao Total dos Recursos')
+                          x="T", y="utilizacao", color="recurso", title='Gráfico de Utilizacao Total dos Recursos')
+            fig.layout.template = CHART_THEME
+            fig.update_xaxes(title='Duração')
+            fig.update_yaxes(title='Utilização dos Recursos')
             fig.show()
 
 
@@ -187,22 +270,30 @@ class Simulacao():
 
             df_tempo_fila_time_slot = self.entidades.df_entidades.groupby(by=['processo']).agg({"tempo_fila":"mean"}).reset_index()
             fig = px.bar(df_tempo_fila_time_slot,x='processo', y="tempo_fila", title='Media de tempo em fila por processo')
+            fig.layout.template = CHART_THEME
+            fig.update_yaxes(title='Média do Tempo em Fila')
+            fig.update_xaxes(title='Processo')
             fig.show()
 
             #Média do tempo em fila por nível de prioridade
             df_tempo_fila_prioridade = self.entidades.df_entidades.groupby(by=['prioridade_paciente']).agg(
                 {"tempo_fila": "mean"}).reset_index()
 
-            fig = px.bar(df_tempo_fila_prioridade, x='prioridade_paciente', y="tempo_fila", title='Media de tempo em fila por prioridade de Atendimento')
+            fig = px.bar(df_tempo_fila_prioridade, x='prioridade_paciente', y="tempo_fila", title='Média de tempo em fila por Prioridade de Atendimento')
+            fig.layout.template = CHART_THEME
+            fig.update_yaxes(title='Média do Tempo em Fila por Prioridade')
+            fig.update_xaxes(title='Prioridade do Paciente')
             fig.show()
 
 
-            df_tempo_fila_prioridade_por_processo = self.entidades.df_entidades.loc[self.entidades.df_entidades.entra_fila > 500000]
+            df_tempo_fila_prioridade_por_processo = self.entidades.df_entidades.loc[self.entidades.df_entidades.entra_fila > self.warmup]
             df_tempo_fila_prioridade_por_processo = df_tempo_fila_prioridade_por_processo.groupby(by=['prioridade_paciente', 'processo']).agg(
                 {"tempo_fila": "mean"}).reset_index()
 
-            fig = px.bar(df_tempo_fila_prioridade_por_processo, x='prioridade_paciente', y="tempo_fila",color='processo', title='Media de tempo em fila por prioridade de Atendimento')
-
+            fig = px.bar(df_tempo_fila_prioridade_por_processo, x='prioridade_paciente', y="tempo_fila",color='processo', title='Média de tempo em fila por prioridade de Atendimento')
+            fig.layout.template = CHART_THEME
+            fig.update_yaxes(title='Tempo em Fila por Prioridade e Processos')
+            fig.update_xaxes(title='Prioridade do Paciente')
             fig.show()
 
 
