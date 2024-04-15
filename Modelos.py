@@ -26,6 +26,7 @@ class Simulacao():
         self.atribuicoes_por_processo = atribuicoes
         self.recursos_liberados_processo = liberacao_recurso
         self.warmup=warmup
+        self.converte_dias = 86400
 
     def comeca_simulacao(self):
         self.env.process(self.gera_chegadas())
@@ -33,13 +34,13 @@ class Simulacao():
 
     def gera_chegadas(self):
         while True:
-            yield self.env.timeout(self.distribuicoes(processo='chegada'))
+            yield self.env.timeout(self.distribuicoes(processo='Chegada'))
 
             self.estatisticas_sistema.computa_chegadas(momento=self.env.now)
             entidade_individual = Entidade_individual(nome='entidade' + " " + str(self.estatisticas_sistema.chegadas))
             entidade_individual.entrada_sistema = self.env.now
             self.entidades.lista_entidades.append(entidade_individual)
-            self.env.process(self.processo_com_recurso(entidade_individual=entidade_individual, processo="ficha"))
+            self.env.process(self.processo_com_recurso(entidade_individual=entidade_individual, processo="Ficha"))
 
     def processo_com_recurso(self, entidade_individual, processo):
 
@@ -59,7 +60,7 @@ class Simulacao():
             print(f'{self.env.now}:  Entidade: {entidade_individual.nome} começou o processo {processo}')
 
         entidade_individual.sai_fila = self.env.now
-        entidade_individual.entra_processo = self.env.now  # TODO: esse valor é sempre igual ao sai fila. Logo pode ser uma variável só!
+        entidade_individual.entra_processo = self.env.now # TODO: esse valor é sempre igual ao sai fila. Logo pode ser uma variável só!
 
         # delay
         yield self.env.timeout(self.distribuicoes(processo=processo))
@@ -67,7 +68,7 @@ class Simulacao():
         #release
         for rec in self.recursos_liberados_processo[processo]: #também deletar da entidade o requests e não buscar mais pelo request_recursos
             req_recurso_liberado = next(req_recurso for req_recurso in entidade_individual.lista_requests if rec == req_recurso.resource.nome)
-            self.recursos_est.fecha_ciclo(nome_recurso=rec,momento=self.env.now, inicio_utilizacao=req_recurso_liberado.usage_since)
+            self.recursos_est.fecha_ciclo(nome_recurso=rec,momento=self.env.now, inicio_utilizacao=req_recurso_liberado.usage_since, converte_dias = self.converte_dias)
             self.recursos[rec].release(req_recurso_liberado)
             entidade_individual.lista_requests.remove(req_recurso_liberado) #Manter requests para serem removidos em outros métodos
 
@@ -82,7 +83,7 @@ class Simulacao():
 
 
         if entidade_individual.atributos.get("retorno", False):
-            proximo_processo = "saida" #Pacientes saem do sistema depois do retorno!
+            proximo_processo = "Saída" #Pacientes saem do sistema depois do retorno!
 
         else:
             proximo_processo = self.decide_proximo_processo(processo=processo, entidade=entidade_individual)
@@ -90,18 +91,18 @@ class Simulacao():
         if not isinstance(proximo_processo, str):
             #Fila para aguardar resulltado do exame!
             entidade_individual.entra_fila = self.env.now
-            entidade_individual.processo_atual = "aguarda_resultado_exame"
+            entidade_individual.processo_atual = "Aguarda Resultado de Exame"
             yield self.env.timeout(proximo_processo) #Aguarda tempo do resultado do exame!!!
             entidade_individual.atributos["prioridade_retorno"] = 3  #Pacientes com retorno tem maior prioridade - Verificar se saída dos outros exames está sendo setado!!!
             entidade_individual.atributos["retorno"] = True
             entidade_individual.sai_fila = self.env.now
-            entidade_individual.fecha_ciclo(processo="aguarda_resultado_exame")
+            entidade_individual.fecha_ciclo(processo="Aguarda Resultado de Exame")
             self.env.process(self.processo_com_recurso(entidade_individual=entidade_individual, processo=entidade_individual.atributos["tipo_atendimento"]))
 
-        if proximo_processo == "saida":
+        if proximo_processo == "Saída":
             entidade_individual.saida_sistema = self.env.now
-            entidade_individual.processo_atual = "saida"
-            entidade_individual.fecha_ciclo(processo="saida")
+            entidade_individual.processo_atual = "Saída"
+            entidade_individual.fecha_ciclo(processo="Saída")
             self.estatisticas_sistema.computa_saidas(self.env.now)
             if self.imprime_detalhes:
                 print(f'{self.env.now}: Entidade {entidade_individual.nome} saiu do sistema!')
@@ -189,19 +190,15 @@ class Simulacao():
             fig.layout.width = 1000
             #fig.layout.height = 200
             fig.update_xaxes(title='Duração')
+            fig.update_layout(title_x=0.5)
             duracao_dias = [converte_segundos_em_dias(x) for x in self.estatisticas_sistema.df_entidades_brutas.discretizacao]
             duracao_semanas = [converte_segundos_em_semanas(x) for x in self.estatisticas_sistema.df_entidades_brutas.discretizacao]
             duracao_mes = [converte_segundos_em_meses(x) for x in self.estatisticas_sistema.df_entidades_brutas.discretizacao]
 
-            fig.update_layout(title='Gráfico de Entidades no Sistema (WIP)')
-            fig.add_trace(go.Scatter(x=self.estatisticas_sistema.df_entidades_brutas.discretizacao,
-                                    y=self.estatisticas_sistema.df_entidades_brutas.WIP,
-                                     mode='lines',
-                                     name='Total de Entidades no Sistema - Segundos',
-                                     line=dict(color='blue')
-                                  ))
+            fig.update_layout(title='Entidades Simultâneas no Sistema (WIP)')
+            fig.update_xaxes(title='Duração (D)',showgrid=False)
+            fig.update_yaxes(title='Contagem de Pacientes')
 
-            fig.update_layout(title='Gráfico de Entidades no Sistema (WIP)')
             fig.add_trace(go.Scatter(x=duracao_dias,
                                     y=self.estatisticas_sistema.df_entidades_brutas.WIP,
                                      mode='lines',
@@ -209,20 +206,6 @@ class Simulacao():
                                     line = dict(color='blue')
                                   ))
 
-            fig.update_layout(title='Gráfico de Entidades no Sistema (WIP)')
-            fig.add_trace(go.Scatter(x=duracao_semanas,
-                                    y=self.estatisticas_sistema.df_entidades_brutas.WIP,
-                                     mode='lines',
-                                     name='Total de Entidades no Sistema - Semanas',
-                                     line=dict(color='blue')
-                                  ))
-            fig.update_layout(title='Gráfico de Entidades no Sistema (WIP)')
-            fig.add_trace(go.Scatter(x=duracao_mes,
-                                    y=self.estatisticas_sistema.df_entidades_brutas.WIP,
-                                     mode='lines',
-                                     name='Total de Entidades no Sistema - Mês',
-                                     line=dict(color='blue')
-                                  ))
 
             fig.show()
 
@@ -258,31 +241,72 @@ class Simulacao():
 
             #self.recursos_est.df_estatisticas_recursos['T_Dias'] = self.recursos_est.df_estatisticas_recursos.T.apply(lambda x: converte_segundos_em_dias(x))
 
+
+            #Passar tudo para dias no eixo x
+            #Colocar unidades entre paratenses nos eixos
+            #Titulo centralizado
+            #Mudar rotula de dados para formatado ao invés de teste_teste
+            #
             fig = px.line(self.recursos_est.df_estatisticas_recursos,
                           x="T", y="utilizacao", color="recurso", title='Gráfico de Utilizacao Total dos Recursos')
             fig.layout.template = CHART_THEME
-            fig.update_xaxes(title='Duração')
-            fig.update_yaxes(title='Utilização dos Recursos')
+            fig.update_xaxes(title='Duração (D)', showgrid=False)
+            fig.update_yaxes(title='Utilização dos Recursos (%)')
+            fig.update_layout(title_x=0.5)
             fig.show()
 
 
             #GRÁFICOS TEMPO DE FILA
 
             df_tempo_fila_time_slot = self.entidades.df_entidades.groupby(by=['processo']).agg({"tempo_fila":"mean"}).reset_index()
-            fig = px.bar(df_tempo_fila_time_slot,x='processo', y="tempo_fila", title='Media de tempo em fila por processo')
+            df_tempo_fila_time_slot['tempo_fila'] = round(df_tempo_fila_time_slot['tempo_fila']/60,3)
+            fig = px.bar(df_tempo_fila_time_slot,x='processo', y="tempo_fila", title='Média de tempo em fila por processo')
+            fig.update_layout(title_x=0.5)
+            fig.update_yaxes(showticklabels=False)
+            #Rotula de Dados
+            for index, row in df_tempo_fila_time_slot.iterrows():
+                fig.add_annotation(
+                    x=row['processo'],
+                    y=row['tempo_fila'],
+                    xref="x",
+                    yref="y",
+                    text=f"<b> {row['tempo_fila']} </b> ",
+                    font=dict(
+                        family="Arial",
+                        size=13,
+                    )
+                )
             fig.layout.template = CHART_THEME
-            fig.update_yaxes(title='Média do Tempo em Fila')
-            fig.update_xaxes(title='Processo')
+            fig.update_yaxes(title='Média do Tempo em Fila (Min)', showgrid=False)
+            fig.update_xaxes(title='Processos')
             fig.show()
+
 
             #Média do tempo em fila por nível de prioridade
             df_tempo_fila_prioridade = self.entidades.df_entidades.groupby(by=['prioridade_paciente']).agg(
                 {"tempo_fila": "mean"}).reset_index()
 
-            fig = px.bar(df_tempo_fila_prioridade, x='prioridade_paciente', y="tempo_fila", title='Média de tempo em fila por Prioridade de Atendimento')
+            df_tempo_fila_prioridade['tempo_em_minutos'] = round(df_tempo_fila_prioridade["tempo_fila"], 2)
+            fig = px.bar(df_tempo_fila_prioridade, x='prioridade_paciente', y="tempo_em_minutos", title='Média de tempo em fila por Prioridade de Atendimento')
             fig.layout.template = CHART_THEME
-            fig.update_yaxes(title='Média do Tempo em Fila por Prioridade')
-            fig.update_xaxes(title='Prioridade do Paciente')
+            fig.update_yaxes(title='Média do Tempo em Fila por Prioridade (Min)', showgrid=False)
+            fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+            fig.update_yaxes(showticklabels=False)
+            fig.update_layout(title_x=0.5)
+            for index, row in df_tempo_fila_prioridade.iterrows():
+                if row[0] == 'Nao Passou da Triagem':
+                    continue
+                fig.add_annotation(
+                    x=row['prioridade_paciente'],
+                    y=row['tempo_em_minutos'],
+                    xref="x",
+                    yref="y",
+                    text=f"<b> {row['tempo_em_minutos']} </b> ",
+                    font=dict(
+                        family="Arial",
+                        size=13,
+                    )
+                )
             fig.show()
 
 
@@ -290,10 +314,14 @@ class Simulacao():
             df_tempo_fila_prioridade_por_processo = df_tempo_fila_prioridade_por_processo.groupby(by=['prioridade_paciente', 'processo']).agg(
                 {"tempo_fila": "mean"}).reset_index()
 
-            fig = px.bar(df_tempo_fila_prioridade_por_processo, x='prioridade_paciente', y="tempo_fila",color='processo', title='Média de tempo em fila por prioridade de Atendimento')
+            df_tempo_fila_prioridade_por_processo['tempo_fila_min'] = round(df_tempo_fila_prioridade_por_processo['tempo_fila']/60,3)
+            fig = px.bar(df_tempo_fila_prioridade_por_processo, x='prioridade_paciente', y="tempo_fila_min",color='processo', title='Média de tempo em fila por prioridade de Atendimento')
             fig.layout.template = CHART_THEME
-            fig.update_yaxes(title='Tempo em Fila por Prioridade e Processos')
-            fig.update_xaxes(title='Prioridade do Paciente')
+            fig.update_yaxes(title='Tempo em Fila por Prioridade e Processos (Min)', showgrid=False)
+            fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+            fig.update_layout(title_x=0.5)
+            fig.update_yaxes(showticklabels=False)
+
             fig.show()
 
 
@@ -430,7 +458,7 @@ class Simulacao():
 
 
         for ent in self.entidades.lista_entidades:
-            fluxo = [f["processo"] for f in ent.estatisticas if f["processo"] != "aguarda_resultado_exame"]
+            fluxo = [f["processo"] for f in ent.estatisticas if f["processo"] != "Aguarda Resultado de Exame"]
             if fluxo not in possiveis_fluxos:
                 print(f'{ent.nome}: {fluxo}')
         b=0
@@ -579,9 +607,9 @@ class Recursos:
 
         return recursos_dict
 
-    def fecha_ciclo(self, nome_recurso, momento, inicio_utilizacao):
+    def fecha_ciclo(self, nome_recurso, momento, inicio_utilizacao, converte_dias=1):
         recurso = self.recursos[nome_recurso]
-        recurso.tempo_utilizacao_recurso += round(momento - inicio_utilizacao)
+        recurso.tempo_utilizacao_recurso += momento - inicio_utilizacao
         #inicio_utilizacao = request.usage_since
         #TODO: preciso usar o momento ou apenas o fecha_utilizacao_recurso ja tem esse dado, visto que será chamado após processo
         dict_aux = {"recurso": nome_recurso,
@@ -589,7 +617,7 @@ class Recursos:
                     "finaliza_utilizacao_recurso": momento,
                     "tempo_utilizacao_recurso": momento - inicio_utilizacao,
                     "utilizacao": recurso.tempo_utilizacao_recurso/(recurso._capacity * momento),
-                    "T": momento,
+                    "T": momento/86400, #Dividido por esse valor para gerar gráficos por Dias!
                     "em_atendimento": recurso.count,
                     "tamanho_fila": len(recurso.queue)
                     }
@@ -635,7 +663,7 @@ class CorridaSimulacao():
             simulacao.env.run(until=simulacao.tempo)
             simulacao.finaliza_todas_estatisticas()
             if len(self.simulacoes) == 1:
-                simulacao.confirma_fluxos()
+                #simulacao.confirma_fluxos()
                 simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
 
         if self.plota_graficos_finais:
