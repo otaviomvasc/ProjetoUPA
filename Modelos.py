@@ -640,7 +640,7 @@ class Recursos:
                 print(f'Media de tempo de fila do recurso {nome}: {round(np.mean(df_entidades.loc[df_entidades.recurso_do_processo == nome]["tempo_fila"])/60,2)} minutos')
             df_aux['recurso'] = nome
             self.df_estatisticas_recursos = pd.concat([self.df_estatisticas_recursos, df_aux])
-        self.df_estatisticas_recursos = self.df_estatisticas_recursos.loc[self.df_estatisticas_recursos['T'] > warmup]
+        self.df_estatisticas_recursos = self.df_estatisticas_recursos.loc[self.df_estatisticas_recursos['T']*86000 > warmup]
 
 class CorridaSimulacao():
     def __init__(self, replicacoes, simulacao: Simulacao, duracao_simulacao, periodo_warmup, plota_histogramas):
@@ -731,7 +731,7 @@ class CorridaSimulacao():
 
             #junção dos dados das estatísticas dos recursos
             df_recursos = self.simulacoes[n_sim].recursos_est.df_estatisticas_recursos
-            df_recursos = df_recursos.loc[df_recursos['T'] > self.periodo_warmup]
+            df_recursos = df_recursos.loc[df_recursos['T'] * 86000 > self.periodo_warmup]
             df_recursos['Replicacao'] = n_sim + 1
 
 
@@ -791,20 +791,12 @@ class CorridaSimulacao():
         print('USO:{0:.2f}% \u00B1 {1:.2f}%  (IC 95%)'.format(np.mean(USO) * 100, calc_ic(USO) * 100))
         print("=" * comprimento_linha, end="\n")
 
-        #Calculando os resultados
-            #Sempre que houver uma saída de invidiuo
-        # NS = Média de individuos - S
-        # NA = Fila para o recurso (Salvar informações nos dados do recurso) - .count
-        # NF = Tamanho da Fila .queue
-
-
-        #Média de cada entidade
-        #TS: tempo no sistema (valor calculado por entidade)
-        #TA: Tempo de atendimento
-        #TF: Tempo em fila
-
-
-
-
-
+        #TODO: Usar resultados finais do artigo como atributo da classe ou retorno da função?
+        #Definição dos valores finais para salvamento e gráficos:
+        self.numero_atendimentos = saidas #TODO: checar porque está saindo mais gente do que entrando!!
+        self.utilizacao_media = np.mean(USO) * 100
+        self.media_em_fila_geral = (np.mean(TF_), calc_ic(TF))
+        self.df_media_fila_por_prioridade = self.df_estatisticas_entidades.groupby(by=['prioridade']).agg({'tempo_fila': 'mean'}).reset_index()
+        self.df_media_fila_por_prioridade['media_minutos'] = round(self.df_media_fila_por_prioridade['tempo_fila']/60,2)
+        self.utilizacao_media_por_recurso = self.df_estatisticas_recursos.groupby(by=['recurso']).agg({'utilizacao': 'mean'}).reset_index()
 
