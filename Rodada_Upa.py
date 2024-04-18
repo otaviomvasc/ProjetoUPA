@@ -1,3 +1,5 @@
+import copy
+
 import pandas as pd
 import simpy
 import random
@@ -295,6 +297,7 @@ if __name__ == "__main__":
                 "distribuicoes": distribuicoes_cen4}}
 
     estatisticas_finais = dict()
+    corridas = list()
     for cen in cenarios:
         simulacao_cenario = Simulacao(distribuicoes=cenarios[cen]["distribuicoes"],
                           imprime=False,
@@ -316,14 +319,15 @@ if __name__ == "__main__":
             periodo_warmup=warmup,
             plota_histogramas=True
         )
-
+        corridas.append(copy.deepcopy((CorridaSimulacao_cenario)))
         CorridaSimulacao_cenario.roda_simulacao()
         CorridaSimulacao_cenario.fecha_estatisticas_experimento()
         estatisticas_finais[cen] = {"Atendimentos":CorridaSimulacao_cenario.numero_atendimentos,
                                     "utilizacao_media": CorridaSimulacao_cenario.utilizacao_media,
                                     "utilizacao_media_por_recurso": CorridaSimulacao_cenario.utilizacao_media_por_recurso,
                                     "media_tempo_fila_geral": CorridaSimulacao_cenario.media_em_fila_geral,
-                                    "media_fila_por_prioridade": CorridaSimulacao_cenario.df_media_fila_por_prioridade}
+                                    "media_fila_por_prioridade": CorridaSimulacao_cenario.df_media_fila_por_prioridade,
+                                    "dados_hist_entidades": CorridaSimulacao_cenario.dados }
 
 
     #Formatação dos dataframes para plots - Formato 1!!
@@ -334,6 +338,7 @@ if __name__ == "__main__":
     df_fila_media = pd.DataFrame({"Cenario": [cen for cen in cenarios], "Tempo_Médio_de_Fila": [estatisticas_finais[cen]["media_tempo_fila_geral"][0] for cen in cenarios]})
     df_fila_media["Tempo_Médio_de_Fila"] = round(df_fila_media["Tempo_Médio_de_Fila"],2)
     df_utilizacao_por_recurso = pd.DataFrame()
+
     for cen in cenarios:
         df_aux = estatisticas_finais[cen]['utilizacao_media_por_recurso']
         df_aux['Cenário'] = cen
@@ -347,7 +352,22 @@ if __name__ == "__main__":
 
     df_filas_por_prioridade = df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade != 'Nao Passou da Triagem'].reset_index()
     df_filas_por_prioridade.media_minutos = round(df_filas_por_prioridade.media_minutos,2)
-    df_utilizacao_por_recurso.utilizacao = round(df_utilizacao_por_recurso.utilizacao,2) * 100
+    df_utilizacao_por_recurso.utilizacao = round(df_utilizacao_por_recurso.utilizacao * 100)
+
+
+
+    #df_entidades para geração de histogramas!!!
+    list_cen = [c for c in cenarios]
+    df_entidades_hist = pd.DataFrame()
+    for cor in corridas:
+        for sim in cor.simulacoes:
+            df_aux = sim.entidades.df_entidades
+            #df_aux['Cenário'] = list_cen[corridas.index(cor)]
+            df_entidades_hist = pd.concat([df_entidades_hist, df_aux])
+
+
+
+
     #Geração final dos gráficos
     #Filas
 
@@ -379,72 +399,36 @@ if __name__ == "__main__":
     fig.show()
 
     #filas por prioridade - formato 1: Cada prioridade de cenário junto no mesmo gráfico
-    for df in [
-    df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 1],
-    df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 2],
-    df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 3],
-    df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 4],
-    df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 5]
-    ]:
-        fig = px.bar(df, x='Cenário',
-                     y='media_minutos',
-                     title=f'Média de tempo em fila de Pacientes Prioridade {list(df.prioridade)[0]}')
-        fig.layout.template = CHART_THEME
-        fig.update_yaxes(title=f'Média do Tempo em Fila (Min)', showgrid=False)
-        fig.update_xaxes(title='Cenário', showgrid=False)
-        fig.update_yaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-        for index, row in df.iterrows():
-            fig.add_annotation(
-                x=row['Cenário'],
-                y=row['media_minutos'],
-                xref="x",
-                yref="y",
-                text=f"<b> {row['media_minutos']} </b> ",
-                font=dict(
-                    family="Arial",
-                    size=12,
-                )
-            )
-        fig.show()
+    # for df in [
+    # df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 1],
+    # df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 2],
+    # df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 3],
+    # df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 4],
+    # df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 5]
+    # ]:
+    #     fig = px.bar(df, x='Cenário',
+    #                  y='media_minutos',
+    #                  title=f'Média de tempo em fila de Pacientes Prioridade {list(df.prioridade)[0]}')
+    #     fig.layout.template = CHART_THEME
+    #     fig.update_yaxes(title=f'Média do Tempo em Fila (Min)', showgrid=False)
+    #     fig.update_xaxes(title='Cenário', showgrid=False)
+    #     fig.update_yaxes(showticklabels=False)
+    #     fig.update_layout(title_x=0.5)
+    #     for index, row in df.iterrows():
+    #         fig.add_annotation(
+    #             x=row['Cenário'],
+    #             y=row['media_minutos'],
+    #             xref="x",
+    #             yref="y",
+    #             text=f"<b> {row['media_minutos']} </b> ",
+    #             font=dict(
+    #                 family="Arial",
+    #                 size=12,
+    #             )
+    #         )
+    #     fig.show()
 
-    #Fila por Prioridade subplots - Melhorar exibição
-    # fig = px.bar(df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 1], x='Cenário', y='media_minutos')
-    # fig.show()
-    # rows_total = 3
-    # cols = 2
-    # fig = make_subplots(rows=rows_total, cols=cols, row_heights=[.8 , .8, .8], column_widths=[.5, .5],
-    #                     subplot_titles=("Pacientes com Prioridade 1", "Pacientes com Prioridade 2", "Pacientes com Prioridade 3",
-    #                                                     "Pacientes com Prioridade 4", "Pacientes com Prioridade 5"))
-    # fig.layout.template = CHART_THEME
-    # fig.update_traces(textposition='inside')
-    # fig.update_layout(height=700)#, width=600)
-    # n_row = 1
-    # n_col = 1
-    #
-    #
-    # df_pr1 = df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 1]
-    # df_pr2 = df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 2]
-    # df_pr3 = df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 3]
-    # df_pr4 = df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 4]
-    # df_pr5 = df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 5]
-    #
-    # fig.add_trace(go.Bar(x=df_pr1.Cenário, y= df_pr1.media_minutos, text=df_pr1.media_minutos,
-    #                      textposition='inside'), row=1, col=1)
-    #
-    # fig.add_trace(go.Bar(x=df_pr2.Cenário, y= df_pr2.media_minutos, text=df_pr2.media_minutos,
-    #                      textposition='inside'), row=1, col=2)
-    #
-    # fig.add_trace(go.Bar(x=df_pr3.Cenário, y= df_pr3.media_minutos, text=df_pr3.media_minutos,
-    #                      textposition='inside'), row=2, col=1)
-    #
-    # fig.add_trace(go.Bar(x=df_pr4.Cenário, y= df_pr4.media_minutos, text=df_pr4.media_minutos,
-    #                      textposition='inside'), row=2, col=2)
-    #
-    # fig.add_trace(go.Bar(x=df_pr5.Cenário, y= df_pr5.media_minutos, text=df_pr5.media_minutos,
-    #                      textposition='inside'), row=3, col=1)
-
-
+    #Fila por prioridade com subplots. Se modelo for aprovado, melhorar exibição.
     rows_total = 3
     cols = 2
     fig = make_subplots(rows=rows_total, cols=cols, row_heights=[.8 , .8, .8], column_widths=[.5, .5],
@@ -474,29 +458,29 @@ if __name__ == "__main__":
 
     recursos = pd.unique(df_utilizacao_por_recurso.recurso)
     #utilização geral por recurso
-    for rec in recursos:
-        df_aux = df_utilizacao_por_recurso.loc[df_utilizacao_por_recurso.recurso == rec]
-        fig = px.bar(df_aux, x='Cenário',
-                     y='utilizacao',
-                     title=f'Média de Utilização do Recurso {rec}')
-        fig.layout.template = CHART_THEME
-        fig.update_yaxes(title=f'Média de Utilização (%)', showgrid=False)
-        fig.update_xaxes(title='Cenário', showgrid=False)
-        fig.update_yaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-        for index, row in df_aux.iterrows():
-            fig.add_annotation(
-                x=row['Cenário'],
-                y=row['utilizacao'],
-                xref="x",
-                yref="y",
-                text=f"<b> {row['utilizacao']} </b> ",
-                font=dict(
-                    family="Arial",
-                    size=12,
-                )
-            )
-        fig.show()
+    # for rec in recursos:
+    #     df_aux = df_utilizacao_por_recurso.loc[df_utilizacao_por_recurso.recurso == rec]
+    #     fig = px.bar(df_aux, x='Cenário',
+    #                  y='utilizacao',
+    #                  title=f'Média de Utilização do Recurso {rec}')
+    #     fig.layout.template = CHART_THEME
+    #     fig.update_yaxes(title=f'Média de Utilização (%)', showgrid=False)
+    #     fig.update_xaxes(title='Cenário', showgrid=False)
+    #     fig.update_yaxes(showticklabels=False)
+    #     fig.update_layout(title_x=0.5)
+    #     for index, row in df_aux.iterrows():
+    #         fig.add_annotation(
+    #             x=row['Cenário'],
+    #             y=row['utilizacao'],
+    #             xref="x",
+    #             yref="y",
+    #             text=f"<b> {row['utilizacao']} </b> ",
+    #             font=dict(
+    #                 family="Arial",
+    #                 size=12,
+    #             )
+    #         )
+    #     fig.show()
 
 
     #Utilização por subplots!
@@ -518,3 +502,55 @@ if __name__ == "__main__":
         else:
             n_col += 1
     fig.show()
+
+
+    #eixo x = recurso, cenário
+    fig = px.bar(df_utilizacao_por_recurso, x='recurso', y='utilizacao', color='Cenário', barmode='group', text='utilizacao', title='Comparativo de Utilização de Recursos em Diferentes Cenários')  #text="nation"
+    fig.update_traces(texttemplate='%{text:.2s}')
+    fig.layout.template = CHART_THEME
+    fig.update_traces(textposition='outside')
+    fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+    fig.update_xaxes(title='Recurso', showgrid=False)
+    fig.update_yaxes(showticklabels=False)
+    fig.update_layout(title_x=0.5)
+
+    fig.show()
+
+    #eixo x = cenário
+    fig = px.bar(df_utilizacao_por_recurso, x='Cenário', y='utilizacao', color='recurso', barmode='group' , text_auto=True, text="utilizacao",  title='Comparativo de Utilização de Recursos em Diferentes Cenários')
+    fig.update_traces(texttemplate='%{text:.2s}')
+    fig.layout.template = CHART_THEME
+    fig.update_traces(textposition='outside')
+    fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+    fig.update_xaxes(title='Recurso', showgrid=False)
+    fig.update_yaxes(showticklabels=False)
+    fig.update_layout(title_x=0.5)
+    fig.show()
+
+
+
+    #fila por prioridade: - Prioridade no eixo x
+    fig = px.bar(df_filas_por_prioridade, x='prioridade', y='media_minutos', color='Cenário', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
+    fig.update_traces(texttemplate='%{text:.2s}')
+    fig.layout.template = CHART_THEME
+    fig.update_traces(textposition='outside')
+    fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+    fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+    fig.update_yaxes(showticklabels=False)
+    fig.update_layout(title_x=0.5)
+
+    fig.show()
+
+    #fila por prioridade: - Cenário no eixo x
+    fig = px.bar(df_filas_por_prioridade, x='Cenário', y='media_minutos', color='prioridade', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
+    fig.update_traces(texttemplate='%{text:.2s}')
+    fig.layout.template = CHART_THEME
+    fig.update_traces(textposition='outside')
+    fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+    fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+    fig.update_yaxes(showticklabels=False)
+    fig.update_layout(title_x=0.5)
+
+    fig.show()
+
+    b=0

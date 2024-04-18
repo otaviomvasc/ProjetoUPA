@@ -681,7 +681,7 @@ class CorridaSimulacao():
         self.dados['tempo_fila'] = self.dados['tempo_fila']/60
         dt_aux =  self.dados.loc[self.dados['tempo_fila'] < 50]
         fig = px.histogram(self.dados, x="tempo_fila", histnorm='probability density', color="prioridade",nbins=100 )
-        fig.show()
+        #fig.show()
 
 
         # for pr in pd.unique(self.dados.prioridade):
@@ -698,7 +698,7 @@ class CorridaSimulacao():
         media_fim['tempo_fila'] = media_fim['tempo_fila'] / 60
         fig = px.bar(media_fim, x='prioridade', color="processo", y="tempo_fila",
                      title='Media de tempo em fila por prioridade de Atendimento por processo') #markers=True)
-        fig.show()
+        #fig.show()
 
         media_acolhimento = np.mean(
             media_fim.loc[((media_fim.processo == 'triagem') | (media_fim.processo == "ficha"))]['tempo_fila'])
