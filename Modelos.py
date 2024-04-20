@@ -463,7 +463,6 @@ class Simulacao():
                 print(f'{ent.nome}: {fluxo}')
         b=0
 
-
 class EstatisticasSistema():
     def __init__(self):
         self.chegadas = 0
@@ -542,7 +541,7 @@ class Entidades:
         "tempo_fila" :round(np.mean(self.df_entidades['tempo_fila']),2)}
         printa_media(coluna='tempo_processando')
         printa_media(coluna='tempo_fila')
-        print(f'TS: { dict_estatisticas_calculadas["tempo_sistema"] / 60} minutos') #TODO: Prof considerou a média do tempo que as máquinas sairam da manutenção, já que o sistema é continuo. Confirmar como fica em sistemas não-continuos
+        print(f'TS: { dict_estatisticas_calculadas["tempo_sistema"] / 60} minutos')
         self.resultados_entidades = pd.DataFrame([dict_estatisticas_calculadas])
 
 class Entidade_individual(Entidades):
@@ -609,7 +608,7 @@ class Recursos:
 
     def fecha_ciclo(self, nome_recurso, momento, inicio_utilizacao, converte_dias=1):
         recurso = self.recursos[nome_recurso]
-        recurso.tempo_utilizacao_recurso += momento - inicio_utilizacao
+        recurso.tempo_utilizacao_recurso += round(momento - inicio_utilizacao)
         #inicio_utilizacao = request.usage_since
         #TODO: preciso usar o momento ou apenas o fecha_utilizacao_recurso ja tem esse dado, visto que será chamado após processo
         dict_aux = {"recurso": nome_recurso,
@@ -627,20 +626,21 @@ class Recursos:
     def fecha_estatisticas(self,df_entidades, warmup=0 ):
         for nome, rec in self.recursos.items():
             df_aux = pd.DataFrame(rec.estatisticas)
+            df_aux = df_aux.loc[df_aux['T'] * 86400 > warmup]
             print("-"*90)
             print(f'Utilizacao Média do recurso {nome}: {round(np.mean(df_aux["utilizacao"]),2)*100}%')
             print(f'Média de entidades em fila no recurso Fila do recurso {nome}: {round(np.mean(df_aux["tamanho_fila"])) } entidades')
-            if nome == 'tecnica_enfermagem' or nome == 'espaco_medicacao':
-                tempo_fila_juntos = round(np.mean(df_entidades.loc[df_entidades.recurso_do_processo == 'tecnica_enfermagem-espaco_medicacao']['tempo_fila'])/60,2)
+            if nome == 'Técnica de Enfermagem' or nome == 'Espaço para tomar Medicação':
+                tempo_fila_juntos = round(np.mean(df_entidades.loc[df_entidades.recurso_do_processo == 'Técnica de Enfermagem-Espaço para tomar Medicação']['tempo_fila'])/60,2)
                 fila_separados = round(np.mean(df_entidades.loc[df_entidades.recurso_do_processo == nome]["tempo_fila"]) / 60, 2)
-                if nome == 'espaco_medicacao':
+                if nome == 'Espaço para tomar Medicação':
                     fila_separados = 0
                 print(f'Media de tempo de fila do recurso {nome}: {tempo_fila_juntos + fila_separados} minutos')
             else:
                 print(f'Media de tempo de fila do recurso {nome}: {round(np.mean(df_entidades.loc[df_entidades.recurso_do_processo == nome]["tempo_fila"])/60,2)} minutos')
             df_aux['recurso'] = nome
             self.df_estatisticas_recursos = pd.concat([self.df_estatisticas_recursos, df_aux])
-        self.df_estatisticas_recursos = self.df_estatisticas_recursos.loc[self.df_estatisticas_recursos['T']*86000 > warmup]
+        self.df_estatisticas_recursos = self.df_estatisticas_recursos.loc[self.df_estatisticas_recursos['T'] * 86400 > warmup] #multipliquei por 86400 para voltar converter o valor para segundos porque na hora de salvar os dados eu precisei salvar em minutos
 
 class CorridaSimulacao():
     def __init__(self, replicacoes, simulacao: Simulacao, duracao_simulacao, periodo_warmup, plota_histogramas):
@@ -662,9 +662,9 @@ class CorridaSimulacao():
             simulacao.comeca_simulacao()
             simulacao.env.run(until=simulacao.tempo)
             simulacao.finaliza_todas_estatisticas()
-            if len(self.simulacoes) == 1:
+            #if len(self.simulacoes) == 1:
                 #simulacao.confirma_fluxos()
-                simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
+            #simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
 
         if self.plota_graficos_finais:
             self.plota_histogramas()
@@ -730,8 +730,8 @@ class CorridaSimulacao():
             df_sistema_bruto['Replicacao'] = n_sim + 1
 
             #junção dos dados das estatísticas dos recursos
-            df_recursos = self.simulacoes[n_sim].recursos_est.df_estatisticas_recursos
-            df_recursos = df_recursos.loc[df_recursos['T'] * 86000 > self.periodo_warmup]
+            df_recursos_aux = self.simulacoes[n_sim].recursos_est.df_estatisticas_recursos
+            df_recursos = df_recursos_aux.loc[df_recursos_aux['T'] * 86000 > self.periodo_warmup].reset_index()
             df_recursos['Replicacao'] = n_sim + 1
 
 

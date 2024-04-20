@@ -201,7 +201,7 @@ if __name__ == "__main__":
         dados = {"Chegada":expovariate(0.0029),
                  "Ficha": random.triangular(2*2.12*coef_chegadas, 7*2.12*coef_chegadas, 4*2.12*coef_chegadas),
                  "Triagem": random.triangular(4*1.6*coef_chegadas, 9 * 1.6 * coef_chegadas, 7 * 1.6 * coef_chegadas),
-                 "Clínico": random.triangular(10*1*coef_chegadas, 20 * 1* coef_chegadas, 15 * 1* coef_chegadas),
+                 "Clínico": random.triangular(7.*1*coef_chegadas, 17 * 1* coef_chegadas, 12 * 1* coef_chegadas),
                  "Pediatra": random.triangular(8*coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
                  "Raio-x": 5 * coef_chegadas, #Cinco minutos
                  "Eletro": 12 * coef_chegadas,
@@ -242,17 +242,31 @@ if __name__ == "__main__":
         return dados[processo]
 
     cenarios = {
-        "Cenário Default" : {"recursos": {"Secretária": [2, False],
-                                          "Enfermeira de Triagem": [3, False],
-                                          "Clínico": [3, True],
-                                          "Pediatra": [2, True],
-                                          "Raio-x": [1, True],
-                                          "Eletro": [1, True],
-                                          "Técnica de Enfermagem": [2, True],
-                                          "Espaço para tomar Medicação": [8, True]} ,
-                             "distribuicoes" : distribuicoes},
-        #Cenario 1: Aumento de uma secretária!!
-        "Cenário 1" : {"recursos":  {"Secretária": [3, False], #aumento de 2 para 3
+        # Cenário 1: Diminuindo uma secretária
+        "To Be 1": {"recursos": {"Secretária": [1, False],  # De 2 para 1
+                                   "Enfermeira de Triagem": [3, False],
+                                   "Clínico": [3, True],
+                                   "Pediatra": [2, True],
+                                   "Raio-x": [1, True],
+                                   "Eletro": [1, True],
+                                   "Técnica de Enfermagem": [2, True],
+                                   "Espaço para tomar Medicação": [8, True]},
+                      "distribuicoes": distribuicoes},
+
+        # Diminuindo o tempo da ficha pela metade e aumentando 1 na triagem
+        "To Be 2": {"recursos": {"Secretária": [1, False],
+                                   # Tirar uma secretária e colocar outra muito eficiente com metade do tempo
+                                   "Enfermeira de Triagem": [3, False],
+                                   "Clínico": [2, True],  # De 3 para 2
+                                   "Pediatra": [2, True],
+                                   "Raio-x": [1, True],
+                                   "Eletro": [1, True],
+                                   "Técnica de Enfermagem": [2, True],
+                                   "Espaço para tomar Medicação": [8, True]},
+                      "distribuicoes": distribuicoes_cen4},
+
+
+        "As Is" : {"recursos": {"Secretária": [2, False],
                                           "Enfermeira de Triagem": [3, False],
                                           "Clínico": [3, True],
                                           "Pediatra": [2, True],
@@ -262,19 +276,19 @@ if __name__ == "__main__":
                                           "Espaço para tomar Medicação": [8, True]} ,
                              "distribuicoes" : distribuicoes},
 
-        # Cenario 2: Aumento de uma secretária e uma enfermeira triagem!!
-        "Cenário 2": {"recursos": {"Secretária": [3, False],  # aumentei de 2 para 3
-                      "Enfermeira de Triagem": [4, False], # aumentei de 3 para 4
-                      "Clínico": [3, True],
-                      "Pediatra": [2, True],
-                      "Raio-x": [1, True],
-                      "Eletro": [1, True],
-                      "Técnica de Enfermagem": [2, True],
-                      "Espaço para tomar Medicação": [8, True]
-                      }, "distribuicoes" : distribuicoes},
+        #Cenario 1: Aumento de uma secretária!!
+        "To Be 3" : {"recursos":  {"Secretária": [2, False], #aumento de 2 para 3
+                                          "Enfermeira de Triagem": [3, False],
+                                          "Clínico": [4, True],
+                                          "Pediatra": [2, True],
+                                          "Raio-x": [1, True],
+                                          "Eletro": [1, True],
+                                          "Técnica de Enfermagem": [2, True],
+                                          "Espaço para tomar Medicação": [8, True]} ,
+                             "distribuicoes" : distribuicoes},
 
         # Cenário 3:  Aumento de uma enfermeira triagem, secretária e um clínico
-        "Cenário 3": {"recursos": {"Secretária": [3, False],  # aumentei de 2 para 3
+        "To Be 4": {"recursos": {"Secretária": [3, False],  # aumentei de 2 para 3
                       "Enfermeira de Triagem": [4, False], # aumentei de 3 para 4
                       "Clínico": [4, True], # aumentei de 3 para 4
                       "Pediatra": [2, True],
@@ -284,17 +298,8 @@ if __name__ == "__main__":
                       "Espaço para tomar Medicação": [8, True]
                       }, "distribuicoes" : distribuicoes},
 
-        #Diminuindo o tempo da ficha pela metade e aumentando 1 na triagem
-        "Cenário 4": {"recursos": {"Secretária": [2, False],
-                "Enfermeira de Triagem": [4,False],
-                "Clínico": [3,True],
-                "Pediatra": [2,True],
-                "Raio-x": [1, True],
-                "Eletro": [1, True],
-                "Técnica de Enfermagem": [2, True],
-                "Espaço para tomar Medicação": [8, True]
-                },
-                "distribuicoes": distribuicoes_cen4}}
+
+    }
 
     estatisticas_finais = dict()
     corridas = list()
@@ -319,9 +324,9 @@ if __name__ == "__main__":
             periodo_warmup=warmup,
             plota_histogramas=True
         )
-        corridas.append(copy.deepcopy((CorridaSimulacao_cenario)))
         CorridaSimulacao_cenario.roda_simulacao()
         CorridaSimulacao_cenario.fecha_estatisticas_experimento()
+        corridas.append(copy.copy(CorridaSimulacao_cenario))
         estatisticas_finais[cen] = {"Atendimentos":CorridaSimulacao_cenario.numero_atendimentos,
                                     "utilizacao_media": CorridaSimulacao_cenario.utilizacao_media,
                                     "utilizacao_media_por_recurso": CorridaSimulacao_cenario.utilizacao_media_por_recurso,
@@ -355,7 +360,6 @@ if __name__ == "__main__":
     df_utilizacao_por_recurso.utilizacao = round(df_utilizacao_por_recurso.utilizacao * 100)
 
 
-
     #df_entidades para geração de histogramas!!!
     list_cen = [c for c in cenarios]
     df_entidades_hist = pd.DataFrame()
@@ -365,192 +369,166 @@ if __name__ == "__main__":
             #df_aux['Cenário'] = list_cen[corridas.index(cor)]
             df_entidades_hist = pd.concat([df_entidades_hist, df_aux])
 
+    # Geração final dos gráficos
+    # Tradução de dados para o inglês
+    traduz = True
+    if traduz:
+        dicionario_traduzido_recursos = {
+            "Secretária": "Secretariat",  # De 2 para 1
+             "Enfermeira de Triagem": "Nurse Screening",
+             "Clínico": "Clinic",
+             "Pediatra": "Pediatrician",
+             "Raio-x": "X-Ray",
+             "Eletro": "Electrocardiogram" ,
+             "Técnica de Enfermagem": "Nursing Technician",
+             "Espaço para tomar Medicação": "Medication Space"
+        }
+
+        dicionario_traduzido_processos = {
+            "Ficha": "Registration of Patient",
+            "Triagem": "Screening",
+            "Clínico": " Clinical Consultation",
+            "Pediatra": "Pediatric Consultation",
+            "Aplicar Medicação": "Applying Medication",
+            "Tomar Medicação": "Taking Medication" ,
+            "Exame de Urina": "Urine Test",
+            "Exame de Sangue": "Blood Test" ,
+            "Análise de Urina": "Urine Test Analysis",
+            "Análise de Sangue Externo": "External Blood Test Analysis" ,
+            "Análise de Sangue Interno": "Internal Blood Test Analysis",
+            "Raio-x": "X-Ray",
+            "Eletro": "Electrocardiogram"
+        }
+
+        df_total_pacientes.rename(columns={"Cenario": "Scenarios", "Atendimentos": "Patients Seen"}, inplace=True)
+        df_utilizacao_media.rename(columns={"Cenario": "Scenarios", "Utilização": "Resources Usage (%)"}, inplace=True)
+        df_fila_media.rename(columns={"Cenario": "Scenarios", "Tempo_Médio_de_Fila": "Queue Average Time (Min)"} ,inplace=True)
+        df_utilizacao_por_recurso.rename(columns={"recurso": "Resource", "utilizacao" : "Resources Usage (%)", "Cenário": "Scenarios"}, inplace=True)
+        df_utilizacao_por_recurso['Resource'] = df_utilizacao_por_recurso.Resource.apply(lambda x: dicionario_traduzido_recursos[x])
+        df_filas_por_prioridade.rename(columns={"prioridade": "Patient Priority", "media_minutos": "Queue Average (Min)",  "Cenário": "Scenarios"},inplace=True)
+
+        CHART_THEME = 'plotly_white'
+        fig = px.bar(df_utilizacao_media, x='Scenarios', y='Resources Usage (%)')
+        fig.show()
+
+
+        #Utiização Média de Recursos
+        fig = px.bar(df_utilizacao_por_recurso, x='Resource', y='Resources Usage (%)', color='Scenarios', barmode='group',
+                     text='Resources Usage (%)', title='Average Utilization Resources in Scenarioss')  # text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        #fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+        #fig.update_xaxes(title='Recurso', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+        fig.show()
+
+        #Gráfico de utilização Cenário x Recurso
+        fig = px.bar(df_utilizacao_por_recurso, x='Scenarios', y='Resources Usage (%)', color='Resource',
+                     barmode='group',
+                     text='Resources Usage (%)', title='Average Utilization Resources in Scenarioss')  # text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        # fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+        # fig.update_xaxes(title='Recurso', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+        fig.show()
+
+        #Filas por prioridade!
+        fig = px.bar(df_filas_por_prioridade, x='Patient Priority', y='Queue Average (Min)', color='Scenarios', barmode='group',
+                     text='Queue Average (Min)', title='Patient Queues by Priority in Scenarioss')  # text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        #fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+        #fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+
+        fig.show()
+
+        #Filas por prioridade e processos!
+        fig = px.bar(df_filas_por_prioridade, x='Scenarios', y='Queue Average (Min)', color='Patient Priority', barmode='group',
+                     text='Queue Average (Min)', title='Patient Queues by Priority in Scenarios')  # text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        #fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+        #fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+
+        fig.show()
+
+    else:
+        CHART_THEME = 'plotly_white'
+
+        #Utilização geral média
+        fig = px.bar(df_utilizacao_media, x='Cenario', y='Utilização')
+        fig.show()
+
+        recursos = pd.unique(df_utilizacao_por_recurso.recurso)
+
+
+        #eixo x = recurso, cenário
+        fig = px.bar(df_utilizacao_por_recurso, x='recurso', y='utilizacao', color='Cenário', barmode='group', text='utilizacao', title=' Utilização Média de Recursos nos Cenários')  #text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+        fig.update_xaxes(title='Recurso', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+
+        fig.show()
+
+        #eixo x = cenário
+        fig = px.bar(df_utilizacao_por_recurso, x='Cenário', y='utilizacao', color='recurso', barmode='group' , text_auto=True, text="utilizacao",  title='Comparativo de Utilização de Recursos em Diferentes Cenários')
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+        fig.update_xaxes(title='Recurso', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+        fig.show()
 
 
 
-    #Geração final dos gráficos
-    #Filas
+        #fila por prioridade: - Prioridade no eixo x
+        fig = px.bar(df_filas_por_prioridade, x='prioridade', y='media_minutos', color='Cenário', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+        fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
 
-    CHART_THEME = 'plotly_white'
-    #total de atendimentos, tempo médio de fila geral - Referência: https://medium.com/@guilhermedatt/como-fazer-subplots-com-plotly-em-python-704b831405f2
-    fig = make_subplots(rows=1, cols=3, subplot_titles=("Pacientes Atendidos", "Média de Filas", "Utilização Média")) #dois gráficos lado a lado!!
-    fig.layout.template = CHART_THEME
-    fig.update_traces(textposition='outside')
-    fig.update_layout(height=480)
-    fig.add_trace(go.Bar(x=df_total_pacientes.Cenario, y= df_total_pacientes.Atendimentos, text=df_total_pacientes.Atendimentos,
-                         textposition='outside'), row=1, col=1)
-    fig.add_trace(go.Bar(x=df_fila_media.Cenario, y=df_fila_media.Tempo_Médio_de_Fila, text=df_fila_media.Tempo_Médio_de_Fila,
-                         textposition='outside'), row=1, col=2)
-    fig.add_trace(go.Bar(x=df_utilizacao_media.Cenario, y=df_utilizacao_media.Utilização, text=df_utilizacao_media.Utilização,
-                         textposition='outside'), row=1, col=3)
+        fig.show()
 
-    fig.update_yaxes(title_text='Total de Pacientes', row=1, col=1, showgrid=False, showticklabels=False)
-    fig.update_yaxes(title_text='Tempo Médio de Fila (Min)', row=1, col=2, showgrid=False, showticklabels=False)
-    fig.update_yaxes(title_text='Utilização (%)', row=1, col=3, showgrid=False, showticklabels=False)
+        #fila por prioridade: - Cenário no eixo x
+        fig = px.bar(df_filas_por_prioridade, x='Cenário', y='media_minutos', color='prioridade', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+        fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
 
-    fig.update_xaxes(title_text='Cenário', row=1, col=1)
-    fig.update_xaxes(title_text='Cenário', row=1, col=2)
-    fig.update_xaxes(title_text='Cenário', row=1, col=3)
+        fig.show()
 
-    for annotation in fig['layout']['annotations']:
-        annotation['y'] = 1.1
-
-
-    fig.show()
-
-    #filas por prioridade - formato 1: Cada prioridade de cenário junto no mesmo gráfico
-    # for df in [
-    # df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 1],
-    # df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 2],
-    # df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 3],
-    # df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 4],
-    # df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == 5]
-    # ]:
-    #     fig = px.bar(df, x='Cenário',
-    #                  y='media_minutos',
-    #                  title=f'Média de tempo em fila de Pacientes Prioridade {list(df.prioridade)[0]}')
-    #     fig.layout.template = CHART_THEME
-    #     fig.update_yaxes(title=f'Média do Tempo em Fila (Min)', showgrid=False)
-    #     fig.update_xaxes(title='Cenário', showgrid=False)
-    #     fig.update_yaxes(showticklabels=False)
-    #     fig.update_layout(title_x=0.5)
-    #     for index, row in df.iterrows():
-    #         fig.add_annotation(
-    #             x=row['Cenário'],
-    #             y=row['media_minutos'],
-    #             xref="x",
-    #             yref="y",
-    #             text=f"<b> {row['media_minutos']} </b> ",
-    #             font=dict(
-    #                 family="Arial",
-    #                 size=12,
-    #             )
-    #         )
-    #     fig.show()
-
-    #Fila por prioridade com subplots. Se modelo for aprovado, melhorar exibição.
-    rows_total = 3
-    cols = 2
-    fig = make_subplots(rows=rows_total, cols=cols, row_heights=[.8 , .8, .8], column_widths=[.5, .5],
-                        subplot_titles=["Pacientes com Prioridade " + str(pr) for pr in pd.unique(df_filas_por_prioridade.prioridade)])
-    fig.layout.template = CHART_THEME
-    fig.update_traces(textposition='inside')
-    fig.update_layout(height=700)#, width=600)
-    n_row = 1
-    n_col = 1
-    fig.update_yaxes(showgrid=False, showticklabels=False)
-    fig.update_layout(title_text='Tempo Médio de Fila por Prioridade de Paciente (Min)', title_x=0.5, height=700)
-    for pr in pd.unique(df_filas_por_prioridade.prioridade):
-        df_aux = df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade == pr]
-        fig.add_trace(go.Bar(x=df_aux.Cenário, y= df_aux.media_minutos, text=df_aux.media_minutos,
-                             textposition='inside'), row=n_row, col=n_col)
-        #fig.update_yaxes(title_text='Tempo Médio de Fila (Min)', row=n_row, col=n_col, showgrid=False, showticklabels=False)
-        if n_col == cols:
-            n_col = 1
-            n_row += 1
-        else:
-            n_col += 1
-    fig.show()
-
-    #Utilização geral média
-    fig = px.bar(df_utilizacao_media, x='Cenario', y='Utilização')
-    fig.show()
-
-    recursos = pd.unique(df_utilizacao_por_recurso.recurso)
-    #utilização geral por recurso
-    # for rec in recursos:
-    #     df_aux = df_utilizacao_por_recurso.loc[df_utilizacao_por_recurso.recurso == rec]
-    #     fig = px.bar(df_aux, x='Cenário',
-    #                  y='utilizacao',
-    #                  title=f'Média de Utilização do Recurso {rec}')
-    #     fig.layout.template = CHART_THEME
-    #     fig.update_yaxes(title=f'Média de Utilização (%)', showgrid=False)
-    #     fig.update_xaxes(title='Cenário', showgrid=False)
-    #     fig.update_yaxes(showticklabels=False)
-    #     fig.update_layout(title_x=0.5)
-    #     for index, row in df_aux.iterrows():
-    #         fig.add_annotation(
-    #             x=row['Cenário'],
-    #             y=row['utilizacao'],
-    #             xref="x",
-    #             yref="y",
-    #             text=f"<b> {row['utilizacao']} </b> ",
-    #             font=dict(
-    #                 family="Arial",
-    #                 size=12,
-    #             )
-    #         )
-    #     fig.show()
-
-
-    #Utilização por subplots!
-    rows2 = 2
-    cols = 4
-    fig = make_subplots(rows=rows2, cols=cols,subplot_titles=["% de Utilização de " + rec for rec in recursos],)
-    fig.layout.template = CHART_THEME
-    fig.update_traces(textposition='inside')
-    fig.update_layout(height=700)#, width=600)
-    n_row = 1
-    n_col = 1
-    for rec in recursos:
-        df_aux = df_utilizacao_por_recurso.loc[df_utilizacao_por_recurso.recurso == rec]
-        fig.add_trace(go.Bar(x=df_aux.Cenário, y= df_aux.utilizacao, text=df_aux.utilizacao,
-                              textposition='inside'), row=n_row, col=n_col)
-        if n_col == cols:
-            n_col = 1
-            n_row += 1
-        else:
-            n_col += 1
-    fig.show()
-
-
-    #eixo x = recurso, cenário
-    fig = px.bar(df_utilizacao_por_recurso, x='recurso', y='utilizacao', color='Cenário', barmode='group', text='utilizacao', title='Comparativo de Utilização de Recursos em Diferentes Cenários')  #text="nation"
-    fig.update_traces(texttemplate='%{text:.2s}')
-    fig.layout.template = CHART_THEME
-    fig.update_traces(textposition='outside')
-    fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
-    fig.update_xaxes(title='Recurso', showgrid=False)
-    fig.update_yaxes(showticklabels=False)
-    fig.update_layout(title_x=0.5)
-
-    fig.show()
-
-    #eixo x = cenário
-    fig = px.bar(df_utilizacao_por_recurso, x='Cenário', y='utilizacao', color='recurso', barmode='group' , text_auto=True, text="utilizacao",  title='Comparativo de Utilização de Recursos em Diferentes Cenários')
-    fig.update_traces(texttemplate='%{text:.2s}')
-    fig.layout.template = CHART_THEME
-    fig.update_traces(textposition='outside')
-    fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
-    fig.update_xaxes(title='Recurso', showgrid=False)
-    fig.update_yaxes(showticklabels=False)
-    fig.update_layout(title_x=0.5)
-    fig.show()
-
-
-
-    #fila por prioridade: - Prioridade no eixo x
-    fig = px.bar(df_filas_por_prioridade, x='prioridade', y='media_minutos', color='Cenário', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
-    fig.update_traces(texttemplate='%{text:.2s}')
-    fig.layout.template = CHART_THEME
-    fig.update_traces(textposition='outside')
-    fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
-    fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
-    fig.update_yaxes(showticklabels=False)
-    fig.update_layout(title_x=0.5)
-
-    fig.show()
-
-    #fila por prioridade: - Cenário no eixo x
-    fig = px.bar(df_filas_por_prioridade, x='Cenário', y='media_minutos', color='prioridade', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
-    fig.update_traces(texttemplate='%{text:.2s}')
-    fig.layout.template = CHART_THEME
-    fig.update_traces(textposition='outside')
-    fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
-    fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
-    fig.update_yaxes(showticklabels=False)
-    fig.update_layout(title_x=0.5)
-
-    fig.show()
+        b=0
 
     b=0
+    #TODO:
+    #Ver porque está saindo mais pacientes do que entrando! - Parou de acontecer, mas Continuar monitorando
+    # Passar tudo para inglês!
+    #Colocar cenario 1 como o pior, 3 como o real e 5 como o melhor
+    #Passar nome da coluna dos dfs para Cenários
+    #ver porque o Media de tempo de fila do recurso Espaço para tomar Medicação está como nan minutos e com média 0 entidades - precisa alterar o nome do recurso. Feito!
+    #Passar para inglês!
