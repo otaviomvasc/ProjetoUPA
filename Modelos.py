@@ -156,17 +156,18 @@ class Simulacao():
 
         def analises_tempo_artigo():
             #tempo médio espera para ficha e triagem
-            tempo_medio_ficha_e_triagem = np.mean(self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo == "ficha") | (
-                        self.entidades.df_entidades.processo == "triagem"))]['tempo_fila'])/60
+            tempo_medio_ficha_e_triagem = np.mean(self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo == "Ficha") | (
+                        self.entidades.df_entidades.processo == "Triagem"))]['tempo_fila'])/60
             print(f'{tempo_medio_ficha_e_triagem = } minutos')
 
             #tempo_medio_de_espera_para_pacientes:
             print('-' * 90)
-            df_aux = self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo != "ficha") | (
-                        self.entidades.df_entidades.processo != "triagem"))]
+            df_aux = self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo != "Ficha") | (
+                        self.entidades.df_entidades.processo != "Triagem"))]
 
             df_tempo_fila_prioridade = df_aux.groupby(by=['prioridade_paciente']).agg(
                 {"tempo_fila": "mean"}).reset_index()
+            df_tempo_fila_prioridade['tempo_fila'] = round(df_tempo_fila_prioridade['tempo_fila']/60,2)
             print(f'{df_tempo_fila_prioridade =}')
 
         def converte_segundos_em_dias(x):
@@ -664,7 +665,9 @@ class CorridaSimulacao():
             simulacao.finaliza_todas_estatisticas()
             #if len(self.simulacoes) == 1:
                 #simulacao.confirma_fluxos()
-            #simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
+            simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
+            b=0
+
 
         if self.plota_graficos_finais:
             self.plota_histogramas()
