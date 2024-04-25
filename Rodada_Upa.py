@@ -190,10 +190,10 @@ if __name__ == "__main__":
 
     warmup = 50000
     replicacoes = 5
-
+    seed(1000)
     recursos_base = {"Secretária": [2, False],
-                               "Enfermeira de Triagem": [3, False],
-                               "Clínico": [4, True],
+                               "Enfermeira de Triagem": [2, False],
+                               "Clínico": [3, True],
                                "Pediatra": [2, True],
                                "Raio-x": [1, True],
                                "Eletro": [1, True],
@@ -204,20 +204,22 @@ if __name__ == "__main__":
         coef_processos = 60 #Conversão para minutos!!
         coef_chegadas = 60
         coef_checkin = 60
-        dados = {"Chegada":expovariate(0.0029),
-                 "Ficha": random.triangular(2*2.12*coef_chegadas, 7*2.12*coef_chegadas, 4*2.12*coef_chegadas),
-                 "Triagem": random.triangular(4*1.6*coef_chegadas, 9 * 1.6 * coef_chegadas, 7 * 1.6 * coef_chegadas),
-                 "Clínico": random.triangular(10.*1*coef_chegadas, 20 * 1* coef_chegadas, 15 * 1* coef_chegadas),
-                 "Pediatra": random.triangular(8*coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
-                 "Raio-x": 5 * coef_chegadas, #Cinco minutos
+        dados = {"Chegada": expovariate(0.0029),
+                 "Ficha": random.triangular(2 * 2.12 * coef_chegadas, 7 * 2.12 * coef_chegadas,
+                                            4 * 2.12 * coef_chegadas),
+                 "Triagem": random.triangular(4 * 1.6 * coef_chegadas, 9 * 1.6 * coef_chegadas,
+                                              7 * 1.6 * coef_chegadas),
+                 "Clínico": random.triangular(10 * 1 * coef_chegadas, 20 * 1 * coef_chegadas, 15 * 1 * coef_chegadas),
+                 "Pediatra": random.triangular(8 * coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
+                 "Raio-x": 5 * coef_chegadas,  # Cincominutos
                  "Eletro": 12 * coef_chegadas,
                  "Exame de Urina": 2 * coef_chegadas,
                  "Exame de Sangue": 3 * coef_chegadas,
-                 "Análise de Sangue Externo":  0.25 * 60 * coef_chegadas, #Quatro horas, mas reduzi pra meia ho
+                 "Análise de Sangue Externo": 0.25 * 60 * coef_chegadas,  # Quatrohoras,masreduziprameiaho
                  "Análise de Sangue Interno": 0.1 * 60 * coef_chegadas,
                  "Análise de Urina": 2 * 60 * coef_chegadas,
-                 "Aplicar Medicação": random.triangular(10*coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas),
-                 "Tomar Medicação": random.triangular(5*coef_chegadas, 40 * coef_chegadas, 15 * coef_chegadas),
+                 "Aplicar Medicação": random.triangular(10 * coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas),
+                 "Tomar Medicação": random.triangular(5 * coef_chegadas, 40 * coef_chegadas, 15 * coef_chegadas),
                  }
 
         return dados[processo]
@@ -236,7 +238,7 @@ if __name__ == "__main__":
                                   )
 
     CorridaSimulacao_base = CorridaSimulacao(
-            replicacoes=1,
+            replicacoes=3,
             simulacao=simulacao_base,
             duracao_simulacao=tempo,
             periodo_warmup=warmup,
@@ -256,7 +258,7 @@ if __name__ == "__main__":
         coef_checkin = 60
         dados = {"Chegada":expovariate(0.0029),
                  "Ficha": random.triangular(2*2.12*coef_chegadas, 7*2.12*coef_chegadas, 4*2.12*coef_chegadas),
-                 "Triagem": random.triangular(4*1.6*coef_chegadas, 9 * 1.6 * coef_chegadas, 7 * 1.6 * coef_chegadas),
+                 "Triagem": random.triangular(4*1.2*coef_chegadas, 9 * 1.2 * coef_chegadas, 7 * 1.2 * coef_chegadas),
                  "Clínico": random.triangular(7.*1*coef_chegadas, 17 * 1* coef_chegadas, 12 * 1* coef_chegadas),
                  "Pediatra": random.triangular(8*coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
                  "Raio-x": 5 * coef_chegadas, #Cinco minutos
@@ -277,311 +279,309 @@ if __name__ == "__main__":
         coef_processos = 60  # Conversão para minutos!!
         coef_chegadas = 60
         coef_checkin = 60
-        dados = {"Chegada": expovariate(0.0029),
-                 "Ficha": random.triangular(1 * 2.12 * coef_chegadas, 3.5 * 2.12 * coef_chegadas,
-                                            2 * 2.12 * coef_chegadas),  # Diminui a metade!
-                 "Triagem": random.triangular(4 * 1.6 * coef_chegadas, 9 * 1.6 * coef_chegadas,
-                                              7 * 1.6 * coef_chegadas),
-                 "Clínico": random.triangular(5.*1*coef_chegadas, 12 * 1* coef_chegadas, 10 * 1* coef_chegadas),
-                 "Pediatra": random.triangular(8 * coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
-                 "Raio-x": 5 * coef_chegadas,  # Cinco minutos
+        dados = {"Chegada":expovariate(0.00295),
+                 "Ficha": random.triangular(2*1*coef_chegadas, 7*1.*coef_chegadas, 4*1.*coef_chegadas),#2.134
+                 "Triagem": random.triangular(4*1*coef_chegadas, 9 * 1 * coef_chegadas, 7 * 1 * coef_chegadas), #1.42
+                 "Clínico": random.triangular(7.5*1*coef_chegadas, 20 * 1* coef_chegadas, 13.5 * 1* coef_chegadas),
+                 "Pediatra": random.triangular(10*coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
+                 "Raio-x": 5 * coef_chegadas, #Cinco minutos
                  "Eletro": 12 * coef_chegadas,
                  "Exame de Urina": 2 * coef_chegadas,
                  "Exame de Sangue": 3 * coef_chegadas,
-                 "Análise de Sangue Externo": 0.25 * 60 * coef_chegadas,  # Quatro horas, mas reduzi pra meia ho
+                 "Análise de Sangue Externo":  0.25 * 60 * coef_chegadas, #Quatro horas, mas reduzi pra meia ho
                  "Análise de Sangue Interno": 0.1 * 60 * coef_chegadas,
                  "Análise de Urina": 2 * 60 * coef_chegadas,
-                 "Aplicar Medicação": random.triangular(10 * coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas),
-                 "Tomar Medicação": random.triangular(5 * coef_chegadas, 40 * coef_chegadas, 15 * coef_chegadas),
+                 "Aplicar Medicação": random.triangular(10*coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas),
+                 "Tomar Medicação": random.triangular(5*coef_chegadas, 40 * coef_chegadas, 15 * coef_chegadas),
                  }
 
         return dados[processo]
 
 
-    # cenarios = {
-    #     # Cenário 1: Diminuindo uma secretária
-    #     "To Be 1": {"recursos": {"Secretária": [1, False],  # De 2 para 1
-    #                              "Enfermeira de Triagem": [3, False],
-    #                              "Clínico": [3, True],
-    #                              "Pediatra": [2, True],
-    #                              "Raio-x": [1, True],
-    #                              "Eletro": [1, True],
-    #                              "Técnica de Enfermagem": [2, True],
-    #                              "Espaço para tomar Medicação": [8, True]},
-    #                 "distribuicoes": distribuicoes_cen4},
-    #
-    #     # Diminuindo o tempo da ficha pela metade e aumentando 1 na triagem
-    #     "To Be 2": {"recursos": {"Secretária": [1, False],
-    #                              # Tirar uma secretária e colocar outra muito eficiente com metade do tempo
-    #                              "Enfermeira de Triagem": [3, False],
-    #                              "Clínico": [2, True],  # De 3 para 2
-    #                              "Pediatra": [2, True],
-    #                              "Raio-x": [1, True],
-    #                              "Eletro": [1, True],
-    #                              "Técnica de Enfermagem": [2, True],
-    #                              "Espaço para tomar Medicação": [8, True]},
-    #                 "distribuicoes": distribuicoes_cen4},
-    #
-    #     "As Is": {"recursos": {"Secretária": [2, False],
-    #                            "Enfermeira de Triagem": [3, False],
-    #                            "Clínico": [3, True],
-    #                            "Pediatra": [2, True],
-    #                            "Raio-x": [1, True],
-    #                            "Eletro": [1, True],
-    #                            "Técnica de Enfermagem": [2, True],
-    #                            "Espaço para tomar Medicação": [8, True]},
-    #               "distribuicoes": distribuicoes},
-    #
-    #     # Cenario 1: Aumento de uma secretária!!
-    #     "To Be 3": {"recursos": {"Secretária": [2, False],  # aumento de 2 para 3
-    #                              "Enfermeira de Triagem": [3, False],
-    #                              "Clínico": [4, True],
-    #                              "Pediatra": [2, True],
-    #                              "Raio-x": [1, True],
-    #                              "Eletro": [1, True],
-    #                              "Técnica de Enfermagem": [2, True],
-    #                              "Espaço para tomar Medicação": [8, True]},
-    #                 "distribuicoes": distribuicoes},
-    #
-    #     # Cenário 3:  Aumento de uma enfermeira triagem, secretária e um clínico
-    #     "To Be 4": {"recursos": {"Secretária": [3, False],  # aumentei de 2 para 3
-    #                              "Enfermeira de Triagem": [4, False],  # aumentei de 3 para 4
-    #                              "Clínico": [4, True],  # aumentei de 3 para 4
-    #                              "Pediatra": [2, True],
-    #                              "Raio-x": [1, True],
-    #                              "Eletro": [1, True],
-    #                              "Técnica de Enfermagem": [2, True],
-    #                              "Espaço para tomar Medicação": [8, True]
-    #                              }, "distribuicoes": distribuicoes},
-    #
-    # }
-    # #Rodada única:
-    #
-    #
-    # estatisticas_finais = dict()
-    # corridas = list()
-    # for cen in cenarios:
-    #     simulacao_cenario = Simulacao(distribuicoes=cenarios[cen]["distribuicoes"],
-    #                       imprime=False,
-    #                       recursos=cenarios[cen]["recursos"],
-    #                       dist_prob=distribuicoes_probabilidade,
-    #                       tempo=tempo,
-    #                       necessidade_recursos=necessidade_recursos,
-    #                       ordem_processo=ordem_processo,
-    #                       atribuicoes=atribuicoes_processo,
-    #                       liberacao_recurso=liberacao_recursos,
-    #                       warmup = warmup,
-    #                       )
-    #
-    #
-    #     CorridaSimulacao_cenario = CorridaSimulacao(
-    #         replicacoes=replicacoes,
-    #         simulacao=simulacao_cenario,
-    #         duracao_simulacao=tempo,
-    #         periodo_warmup=warmup,
-    #         plota_histogramas=True
-    #     )
-    #     CorridaSimulacao_cenario.roda_simulacao()
-    #     CorridaSimulacao_cenario.fecha_estatisticas_experimento()
-    #     corridas.append(copy.copy(CorridaSimulacao_cenario))
-    #     estatisticas_finais[cen] = {"Atendimentos":CorridaSimulacao_cenario.numero_atendimentos,
-    #                                 "utilizacao_media": CorridaSimulacao_cenario.utilizacao_media,
-    #                                 "utilizacao_media_por_recurso": CorridaSimulacao_cenario.utilizacao_media_por_recurso,
-    #                                 "media_tempo_fila_geral": CorridaSimulacao_cenario.media_em_fila_geral,
-    #                                 "media_fila_por_prioridade": CorridaSimulacao_cenario.df_media_fila_por_prioridade,
-    #                                 "dados_hist_entidades": CorridaSimulacao_cenario.dados }
-    #
-    #
-    # #Formatação dos dataframes para plots - Formato 1!!
-    # df_total_pacientes = pd.DataFrame({"Cenario": [cen for cen in cenarios], "Atendimentos": [estatisticas_finais[cen]["Atendimentos"] for cen in cenarios]})
-    # df_total_pacientes['Atendimentos'] = round(df_total_pacientes['Atendimentos'])
-    # df_utilizacao_media = pd.DataFrame({"Cenario": [cen for cen in cenarios], "Utilização": [estatisticas_finais[cen]["utilizacao_media"] for cen in cenarios]})
-    # df_utilizacao_media["Utilização"] = round(df_utilizacao_media["Utilização"],2)
-    # df_fila_media = pd.DataFrame({"Cenario": [cen for cen in cenarios], "Tempo_Médio_de_Fila": [estatisticas_finais[cen]["media_tempo_fila_geral"][0] for cen in cenarios]})
-    # df_fila_media["Tempo_Médio_de_Fila"] = round(df_fila_media["Tempo_Médio_de_Fila"],2)
-    # df_utilizacao_por_recurso = pd.DataFrame()
-    #
-    # for cen in cenarios:
-    #     df_aux = estatisticas_finais[cen]['utilizacao_media_por_recurso']
-    #     df_aux['Cenário'] = cen
-    #     df_utilizacao_por_recurso = pd.concat([df_utilizacao_por_recurso, df_aux])
-    #
-    # df_filas_por_prioridade = pd.DataFrame()
-    # for cen in cenarios:
-    #     df_aux = estatisticas_finais[cen]['media_fila_por_prioridade']
-    #     df_aux['Cenário'] = cen
-    #     df_filas_por_prioridade = pd.concat([df_filas_por_prioridade, df_aux])
-    #
-    # df_filas_por_prioridade = df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade != 'Nao Passou da Triagem'].reset_index()
-    # df_filas_por_prioridade.media_minutos = round(df_filas_por_prioridade.media_minutos,2)
-    # df_utilizacao_por_recurso.utilizacao = round(df_utilizacao_por_recurso.utilizacao * 100)
-    #
-    #
-    # #df_entidades para geração de histogramas!!!
-    # list_cen = [c for c in cenarios]
-    # df_entidades_hist = pd.DataFrame()
-    # for cor in corridas:
-    #     for sim in cor.simulacoes:
-    #         df_aux = sim.entidades.df_entidades
-    #         #df_aux['Cenário'] = list_cen[corridas.index(cor)]
-    #         df_entidades_hist = pd.concat([df_entidades_hist, df_aux])
-    #
-    # # Geração final dos gráficos
-    # # Tradução de dados para o inglês
-    # traduz = True
-    # if traduz:
-    #     dicionario_traduzido_recursos = {
-    #         "Secretária": "Secretariat",  # De 2 para 1
-    #          "Enfermeira de Triagem": "Nurse Screening",
-    #          "Clínico": "Clinic",
-    #          "Pediatra": "Pediatrician",
-    #          "Raio-x": "X-Ray",
-    #          "Eletro": "Electrocardiogram" ,
-    #          "Técnica de Enfermagem": "Nursing Technician",
-    #          "Espaço para tomar Medicação": "Medication Space"
-    #     }
-    #
-    #     dicionario_traduzido_processos = {
-    #         "Ficha": "Registration of Patient",
-    #         "Triagem": "Screening",
-    #         "Clínico": " Clinical Consultation",
-    #         "Pediatra": "Pediatric Consultation",
-    #         "Aplicar Medicação": "Applying Medication",
-    #         "Tomar Medicação": "Taking Medication" ,
-    #         "Exame de Urina": "Urine Test",
-    #         "Exame de Sangue": "Blood Test" ,
-    #         "Análise de Urina": "Urine Test Analysis",
-    #         "Análise de Sangue Externo": "External Blood Test Analysis" ,
-    #         "Análise de Sangue Interno": "Internal Blood Test Analysis",
-    #         "Raio-x": "X-Ray",
-    #         "Eletro": "Electrocardiogram"
-    #     }
-    #
-    #     df_total_pacientes.rename(columns={"Cenario": "Scenarios", "Atendimentos": "Patients Seen"}, inplace=True)
-    #     df_utilizacao_media.rename(columns={"Cenario": "Scenarios", "Utilização": "Resources Usage (%)"}, inplace=True)
-    #     df_fila_media.rename(columns={"Cenario": "Scenarios", "Tempo_Médio_de_Fila": "Queue Average Time (Min)"} ,inplace=True)
-    #     df_utilizacao_por_recurso.rename(columns={"recurso": "Resource", "utilizacao" : "Resources Usage (%)", "Cenário": "Scenarios"}, inplace=True)
-    #     df_utilizacao_por_recurso['Resource'] = df_utilizacao_por_recurso.Resource.apply(lambda x: dicionario_traduzido_recursos[x])
-    #     df_filas_por_prioridade.rename(columns={"prioridade": "Patient Priority", "media_minutos": "Queue Average (Min)",  "Cenário": "Scenarios"},inplace=True)
-    #
-    #     CHART_THEME = 'plotly_white'
-    #     fig = px.bar(df_utilizacao_media, x='Scenarios', y='Resources Usage (%)')
-    #     fig.show()
-    #
-    #
-    #     #Utiização Média de Recursos
-    #     fig = px.bar(df_utilizacao_por_recurso, x='Resource', y='Resources Usage (%)', color='Scenarios', barmode='group',
-    #                  text='Resources Usage (%)', title='Average Utilization Resources in Scenarioss')  # text="nation"
-    #     fig.update_traces(texttemplate='%{text:.2s}')
-    #     fig.layout.template = CHART_THEME
-    #     fig.update_traces(textposition='outside')
-    #     #fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
-    #     #fig.update_xaxes(title='Recurso', showgrid=False)
-    #     fig.update_yaxes(showticklabels=False)
-    #     fig.update_layout(title_x=0.5)
-    #     fig.show()
-    #
-    #     #Gráfico de utilização Cenário x Recurso
-    #     fig = px.bar(df_utilizacao_por_recurso, x='Scenarios', y='Resources Usage (%)', color='Resource',
-    #                  barmode='group',
-    #                  text='Resources Usage (%)', title='Average Utilization Resources in Scenarioss')  # text="nation"
-    #     fig.update_traces(texttemplate='%{text:.2s}')
-    #     fig.layout.template = CHART_THEME
-    #     fig.update_traces(textposition='outside')
-    #     # fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
-    #     # fig.update_xaxes(title='Recurso', showgrid=False)
-    #     fig.update_yaxes(showticklabels=False)
-    #     fig.update_layout(title_x=0.5)
-    #     fig.show()
-    #
-    #     #Filas por prioridade!
-    #     fig = px.bar(df_filas_por_prioridade, x='Patient Priority', y='Queue Average (Min)', color='Scenarios', barmode='group',
-    #                  text='Queue Average (Min)', title='Patient Queues by Priority in Scenarioss')  # text="nation"
-    #     fig.update_traces(texttemplate='%{text:.2s}')
-    #     fig.layout.template = CHART_THEME
-    #     fig.update_traces(textposition='outside')
-    #     #fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
-    #     #fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
-    #     fig.update_yaxes(showticklabels=False)
-    #     fig.update_layout(title_x=0.5)
-    #
-    #     fig.show()
-    #
-    #     #Filas por prioridade e processos!
-    #     fig = px.bar(df_filas_por_prioridade, x='Scenarios', y='Queue Average (Min)', color='Patient Priority', barmode='group',
-    #                  text='Queue Average (Min)', title='Patient Queues by Priority in Scenarios')  # text="nation"
-    #     fig.update_traces(texttemplate='%{text:.2s}')
-    #     fig.layout.template = CHART_THEME
-    #     fig.update_traces(textposition='outside')
-    #     #fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
-    #     #fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
-    #     fig.update_yaxes(showticklabels=False)
-    #     fig.update_layout(title_x=0.5)
-    #
-    #     fig.show()
-    #
-    # else:
-    #     CHART_THEME = 'plotly_white'
-    #
-    #     #Utilização geral média
-    #     fig = px.bar(df_utilizacao_media, x='Cenario', y='Utilização')
-    #     fig.show()
-    #
-    #     recursos = pd.unique(df_utilizacao_por_recurso.recurso)
-    #
-    #
-    #     #eixo x = recurso, cenário
-    #     fig = px.bar(df_utilizacao_por_recurso, x='recurso', y='utilizacao', color='Cenário', barmode='group', text='utilizacao', title=' Utilização Média de Recursos nos Cenários')  #text="nation"
-    #     fig.update_traces(texttemplate='%{text:.2s}')
-    #     fig.layout.template = CHART_THEME
-    #     fig.update_traces(textposition='outside')
-    #     fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
-    #     fig.update_xaxes(title='Recurso', showgrid=False)
-    #     fig.update_yaxes(showticklabels=False)
-    #     fig.update_layout(title_x=0.5)
-    #
-    #     fig.show()
-    #
-    #     #eixo x = cenário
-    #     fig = px.bar(df_utilizacao_por_recurso, x='Cenário', y='utilizacao', color='recurso', barmode='group' , text_auto=True, text="utilizacao",  title='Comparativo de Utilização de Recursos em Diferentes Cenários')
-    #     fig.update_traces(texttemplate='%{text:.2s}')
-    #     fig.layout.template = CHART_THEME
-    #     fig.update_traces(textposition='outside')
-    #     fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
-    #     fig.update_xaxes(title='Recurso', showgrid=False)
-    #     fig.update_yaxes(showticklabels=False)
-    #     fig.update_layout(title_x=0.5)
-    #     fig.show()
-    #
-    #
-    #
-    #     #fila por prioridade: - Prioridade no eixo x
-    #     fig = px.bar(df_filas_por_prioridade, x='prioridade', y='media_minutos', color='Cenário', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
-    #     fig.update_traces(texttemplate='%{text:.2s}')
-    #     fig.layout.template = CHART_THEME
-    #     fig.update_traces(textposition='outside')
-    #     fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
-    #     fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
-    #     fig.update_yaxes(showticklabels=False)
-    #     fig.update_layout(title_x=0.5)
-    #
-    #     fig.show()
-    #
-    #     #fila por prioridade: - Cenário no eixo x
-    #     fig = px.bar(df_filas_por_prioridade, x='Cenário', y='media_minutos', color='prioridade', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
-    #     fig.update_traces(texttemplate='%{text:.2s}')
-    #     fig.layout.template = CHART_THEME
-    #     fig.update_traces(textposition='outside')
-    #     fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
-    #     fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
-    #     fig.update_yaxes(showticklabels=False)
-    #     fig.update_layout(title_x=0.5)
-    #
-    #     fig.show()
-    #
-    #     b=0
-    #
-    # b=0
+    cenarios = {
+        # Cenário 1: Diminuindo uma secretária
+        "To Be 1": {"recursos": {"Secretária": [1, False],  # De 2 para 1
+                                 "Enfermeira de Triagem": [2, False],
+                                 "Clínico": [3, True],
+                                 "Pediatra": [2, True],
+                                 "Raio-x": [1, True],
+                                 "Eletro": [1, True],
+                                 "Técnica de Enfermagem": [2, True],
+                                 "Espaço para tomar Medicação": [8, True]},
+                    "distribuicoes": distribuicoes_cen4},
+
+        # Diminuindo o tempo da ficha pela metade e aumentando 1 na triagem
+        "To Be 2": {"recursos": {"Secretária": [1, False],
+                                 # Tirar uma secretária e colocar outra muito eficiente com metade do tempo
+                                 "Enfermeira de Triagem": [2, False],
+                                 "Clínico": [2, True],  # De 3 para 2
+                                 "Pediatra": [2, True],
+                                 "Raio-x": [1, True],
+                                 "Eletro": [1, True],
+                                 "Técnica de Enfermagem": [2, True],
+                                 "Espaço para tomar Medicação": [8, True]},
+                    "distribuicoes": distribuicoes_cen4},
+
+        "As Is": {"recursos": {"Secretária": [2, False],
+                               "Enfermeira de Triagem": [2, False],
+                               "Clínico": [3, True],
+                               "Pediatra": [2, True],
+                               "Raio-x": [1, True],
+                               "Eletro": [1, True],
+                               "Técnica de Enfermagem": [2, True],
+                               "Espaço para tomar Medicação": [8, True]},
+                  "distribuicoes": distribuicoes_base},
+
+        # Cenario 1: Aumento de uma secretária!!
+        "To Be 3": {"recursos": {"Secretária": [3, False],  # aumento de 2 para 3
+                                 "Enfermeira de Triagem": [2, False],
+                                 "Clínico": [3, True],
+                                 "Pediatra": [2, True],
+                                 "Raio-x": [1, True],
+                                 "Eletro": [1, True],
+                                 "Técnica de Enfermagem": [2, True],
+                                 "Espaço para tomar Medicação": [8, True]},
+                    "distribuicoes": distribuicoes_base},
+
+        # Cenário 3:  Aumento de uma enfermeira triagem, secretária e um clínico
+        "To Be 4": {"recursos": {"Secretária": [3, False],  # aumentei de 2 para 3
+                                 "Enfermeira de Triagem": [3, False],  # aumentei de 2 para 3
+                                 "Clínico": [4, True],  # aumentei de 3 para 4
+                                 "Pediatra": [2, True],
+                                 "Raio-x": [1, True],
+                                 "Eletro": [1, True],
+                                 "Técnica de Enfermagem": [2, True],
+                                 "Espaço para tomar Medicação": [8, True]
+                                 }, "distribuicoes": distribuicoes_base},
+
+    }
+    #Rodada única:
+
+
+    estatisticas_finais = dict()
+    corridas = list()
+    for cen in cenarios:
+        simulacao_cenario = Simulacao(distribuicoes=cenarios[cen]["distribuicoes"],
+                          imprime=False,
+                          recursos=cenarios[cen]["recursos"],
+                          dist_prob=distribuicoes_probabilidade,
+                          tempo=tempo,
+                          necessidade_recursos=necessidade_recursos,
+                          ordem_processo=ordem_processo,
+                          atribuicoes=atribuicoes_processo,
+                          liberacao_recurso=liberacao_recursos,
+                          warmup = warmup,
+                          )
+
+
+        CorridaSimulacao_cenario = CorridaSimulacao(
+            replicacoes=replicacoes,
+            simulacao=simulacao_cenario,
+            duracao_simulacao=tempo,
+            periodo_warmup=warmup,
+            plota_histogramas=True
+        )
+        CorridaSimulacao_cenario.roda_simulacao()
+        CorridaSimulacao_cenario.fecha_estatisticas_experimento()
+        corridas.append(copy.copy(CorridaSimulacao_cenario))
+        estatisticas_finais[cen] = {"Atendimentos":CorridaSimulacao_cenario.numero_atendimentos,
+                                    "utilizacao_media": CorridaSimulacao_cenario.utilizacao_media,
+                                    "utilizacao_media_por_recurso": CorridaSimulacao_cenario.utilizacao_media_por_recurso,
+                                    "media_tempo_fila_geral": CorridaSimulacao_cenario.media_em_fila_geral,
+                                    "media_fila_por_prioridade": CorridaSimulacao_cenario.df_media_fila_por_prioridade,
+                                    "dados_hist_entidades": CorridaSimulacao_cenario.dados }
+
+
+    #Formatação dos dataframes para plots - Formato 1!!
+    df_total_pacientes = pd.DataFrame({"Cenario": [cen for cen in cenarios], "Atendimentos": [estatisticas_finais[cen]["Atendimentos"] for cen in cenarios]})
+    df_total_pacientes['Atendimentos'] = round(df_total_pacientes['Atendimentos'])
+    df_utilizacao_media = pd.DataFrame({"Cenario": [cen for cen in cenarios], "Utilização": [estatisticas_finais[cen]["utilizacao_media"] for cen in cenarios]})
+    df_utilizacao_media["Utilização"] = round(df_utilizacao_media["Utilização"],2)
+    df_fila_media = pd.DataFrame({"Cenario": [cen for cen in cenarios], "Tempo_Médio_de_Fila": [estatisticas_finais[cen]["media_tempo_fila_geral"][0] for cen in cenarios]})
+    df_fila_media["Tempo_Médio_de_Fila"] = round(df_fila_media["Tempo_Médio_de_Fila"],2)
+    df_utilizacao_por_recurso = pd.DataFrame()
+
+    for cen in cenarios:
+        df_aux = estatisticas_finais[cen]['utilizacao_media_por_recurso']
+        df_aux['Cenário'] = cen
+        df_utilizacao_por_recurso = pd.concat([df_utilizacao_por_recurso, df_aux])
+
+    df_filas_por_prioridade = pd.DataFrame()
+    for cen in cenarios:
+        df_aux = estatisticas_finais[cen]['media_fila_por_prioridade']
+        df_aux['Cenário'] = cen
+        df_filas_por_prioridade = pd.concat([df_filas_por_prioridade, df_aux])
+
+    df_filas_por_prioridade = df_filas_por_prioridade.loc[df_filas_por_prioridade.prioridade != 'Nao Passou da Triagem'].reset_index()
+    df_filas_por_prioridade.media_minutos = round(df_filas_por_prioridade.media_minutos,2)
+    df_utilizacao_por_recurso.utilizacao = round(df_utilizacao_por_recurso.utilizacao * 100)
+
+
+    #df_entidades para geração de histogramas!!!
+    list_cen = [c for c in cenarios]
+    df_entidades_hist = pd.DataFrame()
+    for cor in corridas:
+        for sim in cor.simulacoes:
+            df_aux = sim.entidades.df_entidades
+            #df_aux['Cenário'] = list_cen[corridas.index(cor)]
+            df_entidades_hist = pd.concat([df_entidades_hist, df_aux])
+
+    # Geração final dos gráficos
+    # Tradução de dados para o inglês
+    traduz = True
+    if traduz:
+        dicionario_traduzido_recursos = {
+            "Secretária": "Secretariat",  # De 2 para 1
+             "Enfermeira de Triagem": "Nurse Screening",
+             "Clínico": "Clinic",
+             "Pediatra": "Pediatrician",
+             "Raio-x": "X-Ray",
+             "Eletro": "Electrocardiogram" ,
+             "Técnica de Enfermagem": "Nursing Technician",
+             "Espaço para tomar Medicação": "Medication Space"
+        }
+
+        dicionario_traduzido_processos = {
+            "Ficha": "Registration of Patient",
+            "Triagem": "Screening",
+            "Clínico": " Clinical Consultation",
+            "Pediatra": "Pediatric Consultation",
+            "Aplicar Medicação": "Applying Medication",
+            "Tomar Medicação": "Taking Medication" ,
+            "Exame de Urina": "Urine Test",
+            "Exame de Sangue": "Blood Test" ,
+            "Análise de Urina": "Urine Test Analysis",
+            "Análise de Sangue Externo": "External Blood Test Analysis" ,
+            "Análise de Sangue Interno": "Internal Blood Test Analysis",
+            "Raio-x": "X-Ray",
+            "Eletro": "Electrocardiogram"
+        }
+
+        df_total_pacientes.rename(columns={"Cenario": "Scenarios", "Atendimentos": "Patients Seen"}, inplace=True)
+        df_utilizacao_media.rename(columns={"Cenario": "Scenarios", "Utilização": "Resources Usage (%)"}, inplace=True)
+        df_fila_media.rename(columns={"Cenario": "Scenarios", "Tempo_Médio_de_Fila": "Queue Average Time (Min)"} ,inplace=True)
+        df_utilizacao_por_recurso.rename(columns={"recurso": "Resource", "utilizacao" : "Resources Usage (%)", "Cenário": "Scenarios"}, inplace=True)
+        df_utilizacao_por_recurso['Resource'] = df_utilizacao_por_recurso.Resource.apply(lambda x: dicionario_traduzido_recursos[x])
+        df_filas_por_prioridade.rename(columns={"prioridade": "Patient Priority", "media_minutos": "Queue Average (Min)",  "Cenário": "Scenarios"},inplace=True)
+
+        CHART_THEME = 'plotly_white'
+        fig = px.bar(df_utilizacao_media, x='Scenarios', y='Resources Usage (%)')
+        fig.show()
+
+
+        #Utiização Média de Recursos
+        fig = px.bar(df_utilizacao_por_recurso, x='Resource', y='Resources Usage (%)', color='Scenarios', barmode='group',
+                     text='Resources Usage (%)', title='Average Utilization Resources in Scenarioss')  # text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        #fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+        #fig.update_xaxes(title='Recurso', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+        fig.show()
+
+        #Gráfico de utilização Cenário x Recurso
+        fig = px.bar(df_utilizacao_por_recurso, x='Scenarios', y='Resources Usage (%)', color='Resource',
+                     barmode='group',
+                     text='Resources Usage (%)', title='Average Utilization Resources in Scenarioss')  # text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        # fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+        # fig.update_xaxes(title='Recurso', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+        fig.show()
+
+        #Filas por prioridade!
+        fig = px.bar(df_filas_por_prioridade, x='Patient Priority', y='Queue Average (Min)', color='Scenarios', barmode='group',
+                     text='Queue Average (Min)', title='Patient Queues by Priority in Scenarioss')  # text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        #fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+        #fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+
+        fig.show()
+
+        #Filas por prioridade e processos!
+        fig = px.bar(df_filas_por_prioridade, x='Scenarios', y='Queue Average (Min)', color='Patient Priority', barmode='group',
+                     text='Queue Average (Min)', title='Patient Queues by Priority in Scenarios')  # text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        #fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+        #fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+
+        fig.show()
+
+    else:
+        CHART_THEME = 'plotly_white'
+
+        #Utilização geral média
+        fig = px.bar(df_utilizacao_media, x='Cenario', y='Utilização')
+        fig.show()
+
+        recursos = pd.unique(df_utilizacao_por_recurso.recurso)
+
+
+        #eixo x = recurso, cenário
+        fig = px.bar(df_utilizacao_por_recurso, x='recurso', y='utilizacao', color='Cenário', barmode='group', text='utilizacao', title=' Utilização Média de Recursos nos Cenários')  #text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+        fig.update_xaxes(title='Recurso', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+
+        fig.show()
+
+        #eixo x = cenário
+        fig = px.bar(df_utilizacao_por_recurso, x='Cenário', y='utilizacao', color='recurso', barmode='group' , text_auto=True, text="utilizacao",  title='Comparativo de Utilização de Recursos em Diferentes Cenários')
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+        fig.update_xaxes(title='Recurso', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+        fig.show()
+
+
+
+        #fila por prioridade: - Prioridade no eixo x
+        fig = px.bar(df_filas_por_prioridade, x='prioridade', y='media_minutos', color='Cenário', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+        fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+
+        fig.show()
+
+        #fila por prioridade: - Cenário no eixo x
+        fig = px.bar(df_filas_por_prioridade, x='Cenário', y='media_minutos', color='prioridade', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
+        fig.update_traces(texttemplate='%{text:.2s}')
+        fig.layout.template = CHART_THEME
+        fig.update_traces(textposition='outside')
+        fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+        fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+        fig.update_yaxes(showticklabels=False)
+        fig.update_layout(title_x=0.5)
+
+        fig.show()
+
+        b=0
+
+    b=0
     #TODO:
     #Ver porque está saindo mais pacientes do que entrando! - Parou de acontecer, mas Continuar monitorando
     # Passar tudo para inglês!

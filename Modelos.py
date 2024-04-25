@@ -669,8 +669,8 @@ class CorridaSimulacao():
             b=0
 
 
-        if self.plota_graficos_finais:
-            self.plota_histogramas()
+        #if self.plota_graficos_finais:
+            #self.plota_histogramas()
         #Passar para abstract que recebe o df e gera os histogramas, a principio apenas tempo de fila por prioridade e talvez por processo!
 
 
