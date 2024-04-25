@@ -190,7 +190,7 @@ if __name__ == "__main__":
 
     warmup = 50000
     replicacoes = 5
-    seed(1000)
+    #seed(1000)
     recursos_base = {"Secretária": [2, False],
                                "Enfermeira de Triagem": [2, False],
                                "Clínico": [3, True],
@@ -207,9 +207,9 @@ if __name__ == "__main__":
         dados = {"Chegada": expovariate(0.0029),
                  "Ficha": random.triangular(2 * 2.12 * coef_chegadas, 7 * 2.12 * coef_chegadas,
                                             4 * 2.12 * coef_chegadas),
-                 "Triagem": random.triangular(4 * 1.41 * coef_chegadas, 9 * 1.41 * coef_chegadas,
-                                              7 * 1.41 * coef_chegadas),
-                 "Clínico": random.triangular(10 * 0.84 * coef_chegadas, 20 * 0.84 * coef_chegadas, 15 * 0.84 * coef_chegadas),
+                 "Triagem": random.triangular(4 * 1.6 * coef_chegadas, 9 * 1.6 * coef_chegadas,
+                                              7 * 1.6 * coef_chegadas),
+                 "Clínico": random.triangular(10 * 1 * coef_chegadas, 20 * 1 * coef_chegadas, 15 * 1 * coef_chegadas),
                  "Pediatra": random.triangular(8 * coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
                  "Raio-x": 5 * coef_chegadas,  # Cincominutos
                  "Eletro": 12 * coef_chegadas,
@@ -245,8 +245,8 @@ if __name__ == "__main__":
             plota_histogramas=True
         )
 
-    CorridaSimulacao_base.roda_simulacao()
-    CorridaSimulacao_base.fecha_estatisticas_experimento()
+    #CorridaSimulacao_base.roda_simulacao()
+    #CorridaSimulacao_base.fecha_estatisticas_experimento()
     b=0
 
 
@@ -256,20 +256,22 @@ if __name__ == "__main__":
         coef_processos = 60 #Conversão para minutos!!
         coef_chegadas = 60
         coef_checkin = 60
-        dados = {"Chegada":expovariate(0.0029),
-                 "Ficha": random.triangular(2*2.12*coef_chegadas, 7*2.12*coef_chegadas, 4*2.12*coef_chegadas),
-                 "Triagem": random.triangular(4*1.2*coef_chegadas, 9 * 1.2 * coef_chegadas, 7 * 1.2 * coef_chegadas),
-                 "Clínico": random.triangular(7.*1*coef_chegadas, 17 * 1* coef_chegadas, 12 * 1* coef_chegadas),
-                 "Pediatra": random.triangular(8*coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
-                 "Raio-x": 5 * coef_chegadas, #Cinco minutos
+        dados = {"Chegada": expovariate(0.0029),
+                 "Ficha": random.triangular(2 * 2.12 * coef_chegadas, 7 * 2.12 * coef_chegadas,
+                                            4 * 2.12 * coef_chegadas),
+                 "Triagem": random.triangular(4 * 1.6 * coef_chegadas, 9 * 1.6 * coef_chegadas,
+                                              7 * 1.6 * coef_chegadas),
+                 "Clínico": random.triangular(10 * 1 * coef_chegadas, 20 * 1 * coef_chegadas, 15 * 1 * coef_chegadas),
+                 "Pediatra": random.triangular(8 * coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
+                 "Raio-x": 5 * coef_chegadas,  # Cincominutos
                  "Eletro": 12 * coef_chegadas,
                  "Exame de Urina": 2 * coef_chegadas,
                  "Exame de Sangue": 3 * coef_chegadas,
-                 "Análise de Sangue Externo":  0.25 * 60 * coef_chegadas, #Quatro horas, mas reduzi pra meia ho
+                 "Análise de Sangue Externo": 0.25 * 60 * coef_chegadas,  # Quatrohoras,masreduziprameiaho
                  "Análise de Sangue Interno": 0.1 * 60 * coef_chegadas,
                  "Análise de Urina": 2 * 60 * coef_chegadas,
-                 "Aplicar Medicação": random.triangular(10*coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas),
-                 "Tomar Medicação": random.triangular(5*coef_chegadas, 40 * coef_chegadas, 15 * coef_chegadas),
+                 "Aplicar Medicação": random.triangular(10 * coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas),
+                 "Tomar Medicação": random.triangular(5 * coef_chegadas, 40 * coef_chegadas, 15 * coef_chegadas),
                  }
 
         return dados[processo]
@@ -279,20 +281,22 @@ if __name__ == "__main__":
         coef_processos = 60  # Conversão para minutos!!
         coef_chegadas = 60
         coef_checkin = 60
-        dados = {"Chegada":expovariate(0.00295),
-                 "Ficha": random.triangular(2*1*coef_chegadas, 7*1.*coef_chegadas, 4*1.*coef_chegadas),#2.134
-                 "Triagem": random.triangular(4*1*coef_chegadas, 9 * 1 * coef_chegadas, 7 * 1 * coef_chegadas), #1.42
-                 "Clínico": random.triangular(7.5*1*coef_chegadas, 20 * 1* coef_chegadas, 13.5 * 1* coef_chegadas),
-                 "Pediatra": random.triangular(10*coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
-                 "Raio-x": 5 * coef_chegadas, #Cinco minutos
+        dados = {"Chegada": expovariate(0.0029),
+                 "Ficha": random.triangular(2 * 1 * coef_chegadas, 7 * 1 * coef_chegadas,
+                                            4 * 1 * coef_chegadas),
+                 "Triagem": random.triangular(4 * 1.6 * coef_chegadas, 9 * 1.6 * coef_chegadas,
+                                              7 * 1.6 * coef_chegadas),
+                 "Clínico": random.triangular(10 * 1 * coef_chegadas, 20 * 1 * coef_chegadas, 15 * 1 * coef_chegadas),
+                 "Pediatra": random.triangular(8 * coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
+                 "Raio-x": 5 * coef_chegadas,  # Cincominutos
                  "Eletro": 12 * coef_chegadas,
                  "Exame de Urina": 2 * coef_chegadas,
                  "Exame de Sangue": 3 * coef_chegadas,
-                 "Análise de Sangue Externo":  0.25 * 60 * coef_chegadas, #Quatro horas, mas reduzi pra meia ho
+                 "Análise de Sangue Externo": 0.25 * 60 * coef_chegadas,  # Quatrohoras,masreduziprameiaho
                  "Análise de Sangue Interno": 0.1 * 60 * coef_chegadas,
                  "Análise de Urina": 2 * 60 * coef_chegadas,
-                 "Aplicar Medicação": random.triangular(10*coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas),
-                 "Tomar Medicação": random.triangular(5*coef_chegadas, 40 * coef_chegadas, 15 * coef_chegadas),
+                 "Aplicar Medicação": random.triangular(10 * coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas),
+                 "Tomar Medicação": random.triangular(5 * coef_chegadas, 40 * coef_chegadas, 15 * coef_chegadas),
                  }
 
         return dados[processo]
@@ -322,6 +326,19 @@ if __name__ == "__main__":
                                  "Espaço para tomar Medicação": [8, True]},
                     "distribuicoes": distribuicoes_cen4},
 
+
+        #Dobro dos recursos de exame!
+        "To Be Teste Aumento Exames": {"recursos":  {"Secretária": [2, False],
+                               "Enfermeira de Triagem": [2, False],
+                               "Clínico": [3, True],
+                               "Pediatra": [2, True],
+                               "Raio-x": [2, True],
+                               "Eletro": [2, True],
+                               "Técnica de Enfermagem": [4, True],
+                               "Espaço para tomar Medicação": [16, True]},
+                    "distribuicoes": distribuicoes_base},
+
+
         "As Is": {"recursos": {"Secretária": [2, False],
                                "Enfermeira de Triagem": [2, False],
                                "Clínico": [3, True],
@@ -334,7 +351,7 @@ if __name__ == "__main__":
 
         # Cenario 1: Aumento de uma secretária!!
         "To Be 3": {"recursos": {"Secretária": [3, False],  # aumento de 2 para 3
-                                 "Enfermeira de Triagem": [2, False],
+                                 "Enfermeira de Triagem": [3, False],
                                  "Clínico": [3, True],
                                  "Pediatra": [2, True],
                                  "Raio-x": [1, True],
