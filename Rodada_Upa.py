@@ -110,8 +110,8 @@ if __name__ == "__main__":
 
             # 1 - clinico e 2 -  pediatra
 
-        classificacao_clinico_pediatra = [["Clínico", 0.74],
-                                          ["Pediatra", 0.26]]
+        classificacao_clinico_pediatra = [["Clínico", 0.78],
+                                          ["Pediatra", 0.22]]
         # 5 - menos grave e 1 - mais grave
         classificacao_prioridade = [[5, 0.032],
                                     [4, 0.001],
@@ -207,9 +207,9 @@ if __name__ == "__main__":
         dados = {"Chegada": expovariate(0.0029),
                  "Ficha": random.triangular(2 * 2.12 * coef_chegadas, 7 * 2.12 * coef_chegadas,
                                             4 * 2.12 * coef_chegadas),
-                 "Triagem": random.triangular(4 * 1.6 * coef_chegadas, 9 * 1.6 * coef_chegadas,
-                                              7 * 1.6 * coef_chegadas),
-                 "Clínico": random.triangular(10 * 1 * coef_chegadas, 20 * 1 * coef_chegadas, 15 * 1 * coef_chegadas),
+                 "Triagem": random.triangular(4 * 1.41 * coef_chegadas, 9 * 1.41 * coef_chegadas,
+                                              7 * 1.41 * coef_chegadas),
+                 "Clínico": random.triangular(10 * 0.84 * coef_chegadas, 20 * 0.84 * coef_chegadas, 15 * 0.84 * coef_chegadas),
                  "Pediatra": random.triangular(8 * coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
                  "Raio-x": 5 * coef_chegadas,  # Cincominutos
                  "Eletro": 12 * coef_chegadas,

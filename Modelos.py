@@ -158,7 +158,11 @@ class Simulacao():
             #tempo médio espera para ficha e triagem
             tempo_medio_ficha_e_triagem = np.mean(self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo == "Ficha") | (
                         self.entidades.df_entidades.processo == "Triagem"))]['tempo_fila'])/60
-            print(f'{tempo_medio_ficha_e_triagem = } minutos')
+
+            tempo_medio_atendimento = np.mean(self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo == "Ficha") | (
+                        self.entidades.df_entidades.processo == "Triagem"))]['tempo_processando'])/60
+            total = tempo_medio_ficha_e_triagem + tempo_medio_atendimento
+            print(f'{total} tempo de acolhimento total em minutos')
 
             #tempo_medio_de_espera_para_pacientes:
             print('-' * 90)
