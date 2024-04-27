@@ -669,7 +669,7 @@ class CorridaSimulacao():
             simulacao.finaliza_todas_estatisticas()
             #if len(self.simulacoes) == 1:
                 #simulacao.confirma_fluxos()
-            simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
+            #simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
             b=0
 
 
