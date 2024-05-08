@@ -444,6 +444,17 @@ if __name__ == "__main__":
     df_filas_por_prioridade.media_minutos = round(df_filas_por_prioridade.media_minutos,2)
     df_utilizacao_por_recurso.utilizacao = round(df_utilizacao_por_recurso.utilizacao * 100)
 
+    # Jogar todos os dados que utilizei para calcular essas estatísticas
+    # Calcular as estatísticas do fim de cada cenário
+    # Comparar com os resultados obtidos no python
+    # Rodar cenário que gera poucos dados (10 pacientes)
+
+    # Revisar o calculo da quantidade de corridas
+    # nível de ocupação dos clínicos como métrica para calculo de número de replicações conforme indicado no TCC.
+
+
+
+
 
     #Junção dos dados brutos das dataframes de cada cenário!
     df_estatisticas_bruto = pd.DataFrame()
@@ -508,7 +519,32 @@ if __name__ == "__main__":
         #Gerar gráficos de cada simulação para todas as corridas!!
         #Gráfico WIP!
 
+        df_estatisticas_bruto['Scenario-Run'] = df_estatisticas_bruto.apply(lambda x: x.Scenarios + " - " + "Run " +str(x.Run), axis=1)
+        df_scenario_run_WIP = df_estatisticas_bruto.groupby(by=['Scenario-Run', 'discretizacao', 'Scenarios']).agg({"WIP": "mean"}).reset_index()
+        duracao_dias_sr = [converte_segundos_em_dias(x) for x in
+                          df_scenario_run_WIP.discretizacao]
+        fig = px.line(df_scenario_run_WIP, x=duracao_dias_sr, y=df_scenario_run_WIP.WIP, color="Scenarios")
+        fig.update_layout(title='Global Average Entities in Process (WIP)')
+        fig.update_xaxes(title='Duration (D)', showgrid=False)
+        fig.update_yaxes(title='Number os Patients')
+        fig.layout.template = CHART_THEME
+        fig.update_layout(title_x=0.5)
 
+        fig.show()
+
+
+        df_recursos['Scenario-Run'] = df_recursos.apply(lambda x: x.Scenarios + " - " + "Run " + str(x.Run), axis = 1)
+        df_recursos['Scenario-Run-Resource'] = df_recursos.apply(lambda x: x.Scenarios + " - " + "Run " + str(x.Run) + x.Resource, axis=1)
+        df_recursos['Scenario-Resource'] = df_recursos.apply(lambda x: x.Scenarios + " - "  +  x.Resource, axis=1)
+        #Média de todos os recursos por replicação!!!
+        df_rec_scenario_run = df_recursos.groupby(by=['Scenario-Resource', 'T', 'Resource']).agg({"Resources Usage (%)": "mean"}).reset_index()
+        fig = px.line(df_rec_scenario_run,
+                      x="T", y="Resources Usage (%)", color="Scenario-Resource", title='Resources Utilization') #hover_data='Scenario-Resource')
+        fig.layout.template = CHART_THEME
+        fig.update_xaxes(title='Duration (D)', showgrid=False)
+        # fig.update_yaxes(title='Utilização dos Recursos (%)')
+        fig.update_layout(title_x=0.5)
+        fig.show()
 
         if graficos_de_todas_as_replicacoes_juntas:
             media_de_todas_as_replicações = True
