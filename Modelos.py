@@ -34,7 +34,6 @@ class Simulacao():
         #self.env.run(until=self.tempo) #valor de teste para desenvolvimento!!!!
 
     def gera_chegadas(self):
-       #while self.estatisticas_sistema.saidas < 2:
         while True:
             yield self.env.timeout(self.distribuicoes(processo='Chegada'))
         # for i in range(2):
@@ -48,6 +47,8 @@ class Simulacao():
     def processo_com_recurso(self, entidade_individual, processo):
 
         entidade_individual.entra_fila = self.env.now
+        if processo != "Ficha":
+            self.estatisticas_sistema.computa_entidade_entrando_em_fila(self.env.now)
 
         #TODO: alterei o get para primeiro buscar se tem prioridade retorno.Caso não exista a chave no dicionario de atributos, buscara a prioridade de atendimento normal. Optei por deixar explicito!
         requests_recursos = [self.recursos[recurso_humando].request() if type(self.recursos[recurso_humando]) == simpy.resources.resource.Resource
@@ -63,7 +64,9 @@ class Simulacao():
             print(f'{self.env.now}:  Entidade: {entidade_individual.nome} começou o processo {processo}')
 
         entidade_individual.sai_fila = self.env.now
+        self.estatisticas_sistema.computa_entidade_saindo_da_fila(self.env.now)
         entidade_individual.entra_processo = self.env.now # TODO: esse valor é sempre igual ao sai fila. Logo pode ser uma variável só!
+        #self.estatisticas_sistema.computa_entidade_entrando_atendimento(self.env.now)
 
         # delay
         yield self.env.timeout(self.distribuicoes(processo=processo))
@@ -77,6 +80,7 @@ class Simulacao():
 
 
         entidade_individual.sai_processo = self.env.now
+        #self.estatisticas_sistema.computa_entidade_saindo_atendimento(self.env.now)
         entidade_individual.fecha_ciclo(processo=processo)
 
         param = self.atribuicoes_por_processo.get(processo, None)
@@ -94,6 +98,7 @@ class Simulacao():
         if not isinstance(proximo_processo, str):
             #Fila para aguardar resulltado do exame!
             entidade_individual.entra_fila = self.env.now
+            #self.estatisticas_sistema.computa_entidade_entrando_em_fila(self.env.now)
             entidade_individual.processo_atual = "Aguarda Resultado de Exame"
             req = self.recursos['Default_Aguarda_Medicacao'].request()
             yield self.env.timeout(proximo_processo) #Aguarda tempo do resultado do exame!!!
@@ -104,6 +109,7 @@ class Simulacao():
             entidade_individual.atributos["prioridade_retorno"] = 3  #Pacientes com retorno tem maior prioridade - Verificar se saída dos outros exames está sendo setado!!!
             entidade_individual.atributos["retorno"] = True
             entidade_individual.sai_fila = self.env.now
+            #self.estatisticas_sistema.computa_entidade_saindo_da_fila(self.env.now)
             entidade_individual.fecha_ciclo(processo="Aguarda Resultado de Exame")
             self.env.process(self.processo_com_recurso(entidade_individual=entidade_individual, processo=entidade_individual.atributos["tipo_atendimento"]))
 
@@ -481,6 +487,8 @@ class EstatisticasSistema():
         self.chegadas = 0
         self.saidas = 0
         self.WIP = 0
+        self.em_fila = 0
+        self.em_atendimento = 0
         self.df_estatisticas_simulacao = pd.DataFrame()
         self.entidades_sistema = list()
         self.df_entidades_brutas = pd.DataFrame()
@@ -496,6 +504,9 @@ class EstatisticasSistema():
                     "Media_Sistema": entidades_sistema}
 
         self.df_entidades_brutas = pd.DataFrame(self.entidades_sistema)
+        self.df_entidades_brutas = self.df_entidades_brutas.drop_duplicates(subset='discretizacao', keep='last') #removendo registros da mesma discretização para pegar a foto final!!
+
+
         self.df_estatisticas_simulacao = pd.DataFrame([dict_aux])
         self.df_entidades_brutas = self.df_entidades_brutas.loc[self.df_entidades_brutas.discretizacao >= warmup]
 
@@ -503,16 +514,62 @@ class EstatisticasSistema():
         #TODO: Adaptar para computar chegadas de mais de um indivíduo!!!!
         self.chegadas += 1
         self.WIP += 1
+        self.em_fila += 1
         self.entidades_sistema.append({"discretizacao": momento,
                                        "WIP": self.WIP,
-                                       "processo": "chegada"})
+                                       "processo": "chegada",
+                                       "em_fila": self.em_fila,
+                                       "em_atendimento": self.em_atendimento})
 
     def computa_saidas(self, momento):
         self.saidas += 1
         self.WIP -= 1
+        self.em_atendimento -= 1
         self.entidades_sistema.append({"discretizacao": momento,
                                        "WIP": self.WIP,
-                                       "processo": "saida"})
+                                       "processo": "saida",
+                                       "em_fila": self.em_fila,
+                                       "em_atendimento": self.em_atendimento
+                                       })
+
+    def computa_entidade_entrando_em_fila(self, momento):
+        self.em_fila += 1
+        self.em_atendimento -= 1
+        self.entidades_sistema.append({"discretizacao": momento,
+                                       "WIP": self.WIP,
+                                       "processo": "fila",
+                                       "em_fila": self.em_fila,
+                                       "em_atendimento": self.em_atendimento
+                                       })
+
+    def computa_entidade_saindo_da_fila(self, momento):
+        self.em_fila -= 1
+        self.em_atendimento += 1
+        self.entidades_sistema.append({"discretizacao": momento,
+                                       "WIP": self.WIP,
+                                       "processo": "fila",
+                                       "em_fila": self.em_fila,
+                                       "em_atendimento": self.em_atendimento
+                                       })
+
+    def computa_entidade_entrando_atendimento(self, momento):
+        self.em_atendimento += 1
+        self.entidades_sistema.append({"discretizacao": momento,
+                                       "WIP": self.WIP,
+                                       "processo": "atendimento",
+                                       "em_fila": self.em_fila,
+                                       "em_atendimento": self.em_atendimento
+                                       })
+
+    def computa_entidade_saindo_atendimento(self, momento):
+        self.em_atendimento -= 1
+        self.entidades_sistema.append({"discretizacao": momento,
+                                       "WIP": self.WIP,
+                                       "processo": "atendimento",
+                                       "em_fila": self.em_fila,
+                                       "em_atendimento": self.em_atendimento
+                                       })
+
 
 class Entidades:
     def __init__(self):
@@ -540,8 +597,6 @@ class Entidades:
                 return processo_aux[0] + "-" + processo_aux[1]
             elif len(processo_aux) == 1:
                 return processo_aux[0]
-
-
 
         tempo_sistema = list() #TODO:Loop está muito lento. Melhorar!
         self.df_entidades = pd.DataFrame([est for ent in self.lista_entidades for est in ent.estatisticas])
@@ -791,12 +846,18 @@ class CorridaSimulacao():
 
 
                 #PARTE DO WIP AINDA PRECISA DE CONCERTO! - CALCULAR JUNTO COM WIP O NÚMERO EM ATENDIMENTO E O NÚMERO EM FILA
+                df_wip = self.df_estatistcas_sistemas_brutos.loc[self.df_estatistcas_sistemas_brutos.Replicacao == n_sim_ + 1]
+                dados_NS = list(df_wip['WIP'])
+                dados_em_fila = list(df_wip['em_fila'])
+                dados_em_atend = list(df_wip['em_atendimento'])
+                media_NS_final = round(np.mean(dados_NS),2)
+                media_NF_final = round(np.mean(dados_em_fila), 2)
+                media_NA_final = round(np.mean(dados_em_atend),2)
+
                 dados_WIP = list(self.df_estatistcas_sistemas_brutos.loc[self.df_estatistcas_sistemas_brutos.Replicacao == n_sim_ + 1]["WIP"])
                 media_WIP = np.mean(dados_WIP)
 
                 df_rec = self.df_estatisticas_recursos.loc[self.df_estatisticas_recursos.Replicacao == n_sim_ + 1]
-                media_direta_em_at = np.mean(df_rec.em_atendimento)
-                media_direta_em_fila = np.mean(df_rec.tamanho_fila)
 
                 #Calculando a média de individuos em fila e atendimento por recurso - ESTA MÉTRICA É A CORRETA. CALCULAR VALOR COM IC 95%
                 df_media = df_rec.groupby(by=['recurso']).agg({"em_atendimento": "mean", "tamanho_fila":"mean"}).reset_index()
@@ -806,6 +867,8 @@ class CorridaSimulacao():
                 media_em_att = np.mean(df_media.em_atendimento)
                 media_em_fila = np.mean(df_media.tamanho_fila)
 
+
+
                 ####### RECURSOS #####
                 df_rec_rep = self.df_estatisticas_recursos.loc[self.df_estatisticas_recursos.Replicacao == n_sim_ + 1]
                 rec_avaliados = [r for r in pd.unique(df_rec_rep.recurso) if r != 'Default_Aguarda_Medicacao']
@@ -813,6 +876,10 @@ class CorridaSimulacao():
                 for rc in rec_avaliados:
                     dict_rec[rc] = {"dados": list(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']), "media": np.mean(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']) }
 
+                # Calculo do número de replicações
+                #Número médio de pacientes prioridade 1 no recurso clínico!
+                dados_pr1 = list(df_ent_aux.loc[((df_ent_aux.prioridade == 1) & (df_ent_aux.processo == 'Clínico'))]['tempo_fila'])
+                media_pr1 = np.mean(dados_pr1)/60
 
                 dt_aux = {"dados_TS": aux_TS,
                           "media_TS": np.mean(aux_TS),
@@ -820,9 +887,19 @@ class CorridaSimulacao():
                           "media_TF_total": df_media_tempo_fila,
                           "dados_TA":list(df_soma_tempos_por_entidade.tempo_processando),
                           "dados_TF": list(df_soma_tempos_por_entidade.tempo_fila),
-                          "dict_utilizacao": dict_rec}
+                          "dict_utilizacao": dict_rec,
+                          "dados_NS" : dados_NS,
+                          "dados_NF": dados_em_fila,
+                          "dados_NA": dados_em_atend,
+                          "media_NS_final": media_NS_final,
+                          "media_NF_final": media_NF_final,
+                          "media_NA_final": media_NA_final,
+                          "dados_pr1": dados_pr1,
+                          "media_pr1" : media_pr1}
 
                 tempos_sistema_por_replicacao[n_sim_] = dt_aux
+
+
 
 
             #Calculos finais dos Tempos!
@@ -851,17 +928,41 @@ class CorridaSimulacao():
                 medias = [v["dict_utilizacao"][r]['media'] for v in tempos_sistema_por_replicacao.values()]
                 dados = [i for v in tempos_sistema_por_replicacao.values() for i in v["dict_utilizacao"][r]['dados']]
                 print('Media Utilização do recurso {0}: {1:.2f}% \u00B1 {2:.2f} % (IC 95%)'.format( r, np.round(np.mean(medias)*100,2), calc_ic(dados)))
-                if calcula_corridas and r == "Clínico":
-                    #t = 2.776 #t4
-                    t = 2.145
-                    desvio = np.std(dados)
-                    ic = [round(np.mean(medias) - (t * desvio / math.sqrt(self.replicacoes)), 4),
-                          round(np.mean(medias) + (t * desvio / math.sqrt(self.replicacoes)), 4)]
-                    precisao_desejada = .018 #1% de precisao
-                    h = round((t * desvio / math.sqrt(self.replicacoes)),4)
-                    replicacoes_finais = np.ceil(self.replicacoes * (h/precisao_desejada)**2)
 
+            #Calculo final das entidades no sistema!
+            media_das_medias_WIP = [v["media_NS_final"] for v in tempos_sistema_por_replicacao.values()]
+            media_das_medias_NA = [v["media_NA_final"] for v in tempos_sistema_por_replicacao.values()]
+            media_das_medias_NF = [v["media_NF_final"] for v in tempos_sistema_por_replicacao.values()]
+            dados_WIP_full = [i  for v in tempos_sistema_por_replicacao.values() for i in v["dados_NS"]]
+            dados_NA_full = [i  for v in tempos_sistema_por_replicacao.values() for i in v["dados_NA"]]
+            dados_NF_full = [i  for v in tempos_sistema_por_replicacao.values() for i in v["dados_NF"]]
 
+            media_WIP = np.mean(media_das_medias_WIP)
+            media_NA = np.mean(media_das_medias_NA)
+            media_NF = np.mean(media_das_medias_NF)
+
+            print('NS: {0:.2f} \u00B1 {1:.2f} entidades (IC 95%)'.format(media_WIP,calc_ic(dados_WIP_full)))
+            print('NF: {0:.2f} \u00B1 {1:.2f} entidades (IC 95%)'.format(media_NA, calc_ic(dados_NF_full)))
+            print('NA: {0:.2f} \u00B1 {1:.2f} entidades (IC 95%)'.format(media_NF, calc_ic(dados_NA_full)))
+            print(f'Diferença = {round(media_NA + media_NF - media_WIP,2)}')
+
+            if calcula_corridas:
+                dados = [i/60  for v in tempos_sistema_por_replicacao.values() for i in v["dados_pr1"]]
+                medias = [v["media_pr1"] for v in tempos_sistema_por_replicacao.values()]
+                t = 2.776 #t4
+                #t = 2.145
+                desvio = np.std(medias)
+                ic = [round(np.mean(medias) - (t * desvio / math.sqrt(self.replicacoes)), 4),
+                      round(np.mean(medias) + (t * desvio / math.sqrt(self.replicacoes)), 4)]
+                precisao_desejada = 19 * 10 / 100 # 5% de precisao
+                h = round((t * desvio / math.sqrt(self.replicacoes)), 4)
+                replicacoes_finais = np.ceil(self.replicacoes * (h / precisao_desejada) ** 2)
+                print(f'{np.mean(medias) = }'
+                      f' {t = }',
+                      f' - {ic = }',
+                      f' - {h =}',
+                      f' - {replicacoes_finais = }'
+                      )
 
         else:
             TS = [(ent.saida_sistema - ent.entrada_sistema)/60 for sim in self.simulacoes for ent in sim.entidades.lista_entidades if ent.saida_sistema > 1]

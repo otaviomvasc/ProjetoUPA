@@ -1,4 +1,5 @@
 import copy
+import statistics
 
 import pandas as pd
 import simpy
@@ -86,6 +87,7 @@ def converte_segundos_em_meses(x):
 if __name__ == "__main__":
 
     #Dados e parâmetros default em todos os cenários:
+    seed(1000)
     ordem_processo = {
         "Ficha": "Triagem",
         "Triagem": ["decide_atendimento"],
@@ -231,7 +233,7 @@ if __name__ == "__main__":
     distribuicoes_probabilidade = calcula_distribuicoes_prob()
 
     warmup = 50000
-    replicacoes = 5
+    replicacoes = 16
     #seed(1000)
     recursos_base = {"Secretária": [2, False],
                                "Enfermeira de Triagem": [2, False],
@@ -240,7 +242,8 @@ if __name__ == "__main__":
                                "Raio-x": [1, True],
                                "Eletro": [1, True],
                                "Técnica de Enfermagem": [2, True],
-                               "Espaço para tomar Medicação": [8, True]}
+                               "Espaço para tomar Medicação": [8, True],
+                               "Default_Aguarda_Medicacao": [100000, False]} #Recurso default para guardar entidades esperando exames!}
 
     def distribuicoes_base(processo, slot="None"):
         coef_processos = 60 #Conversão para minutos!!
@@ -276,21 +279,25 @@ if __name__ == "__main__":
                                   ordem_processo=ordem_processo,
                                   atribuicoes=atribuicoes_processo,
                                   liberacao_recurso=liberacao_recursos,
-                                  warmup=warmup,
+                                  warmup=50000,
                                   )
 
     CorridaSimulacao_base = CorridaSimulacao(
-            replicacoes=3,
+            replicacoes=5,
             simulacao=simulacao_base,
             duracao_simulacao=tempo,
-            periodo_warmup=warmup,
+            periodo_warmup=50000,
             plota_histogramas=True
         )
 
-    #CorridaSimulacao_base.roda_simulacao()
-    #CorridaSimulacao_base.fecha_estatisticas_experimento()
-    b=0
-
+    CorridaSimulacao_base.roda_simulacao()
+    CorridaSimulacao_base.fecha_estatisticas_experimento()
+    # CorridaSimulacao_base.df_estatisticas_entidades.to_excel("df_entidades.xlsx")
+    # CorridaSimulacao_base.df_estatisticas_recursos.to_excel("df_recursos.xlsx")
+    # CorridaSimulacao_base.df_estatistcas_sistemas_brutos.to_excel("df_WIP.xlsx")
+    # TS = [(ent.saida_sistema - ent.entrada_sistema) / 60 for sim in CorridaSimulacao_base.simulacoes for ent in
+    #               sim.entidades.lista_entidades if ent.saida_sistema > 1]
+    # print(f'Media: {round(np.mean(TS),2)}, Mediana {round(np.median(TS),2)}, Moda {round(statistics.mode(TS),2)}')
 
     #Unicos pontos que iremos alterar a principio na geração de cenários será os recursos e tempos de processo!
 
@@ -328,7 +335,8 @@ if __name__ == "__main__":
                                  "Raio-x": [1, True],
                                  "Eletro": [1, True],
                                  "Técnica de Enfermagem": [2, True],
-                                 "Espaço para tomar Medicação": [8, True]},
+                                 "Espaço para tomar Medicação": [8, True],
+                                 "Default_Aguarda_Medicacao": [100000, False]},
                     "distribuicoes": distribuicoes_cen4},
 
         # # Diminuindo o tempo da ficha pela metade e aumentando 1 na triagem
@@ -340,7 +348,8 @@ if __name__ == "__main__":
                                "Raio-x": [1, True],
                                "Eletro": [1, True],
                                "Técnica de Enfermagem": [2, True],
-                               "Espaço para tomar Medicação": [8, True]},
+                               "Espaço para tomar Medicação": [8, True],
+                               "Default_Aguarda_Medicacao": [100000, False]},
                   "distribuicoes": distribuicoes_base},
 
         #Dobro dos recursos de exame!
@@ -351,7 +360,8 @@ if __name__ == "__main__":
                                "Raio-x": [2, True],
                                "Eletro": [2, True],
                                "Técnica de Enfermagem": [4, True],
-                               "Espaço para tomar Medicação": [16, True]},
+                               "Espaço para tomar Medicação": [16, True],
+                                "Default_Aguarda_Medicacao": [100000, False]},
                     "distribuicoes": distribuicoes_base},
 
 
@@ -363,7 +373,8 @@ if __name__ == "__main__":
                                  "Raio-x": [1, True],
                                  "Eletro": [1, True],
                                  "Técnica de Enfermagem": [2, True],
-                                 "Espaço para tomar Medicação": [8, True]},
+                                 "Espaço para tomar Medicação": [8, True],
+                                 "Default_Aguarda_Medicacao": [100000, False]},
                     "distribuicoes": distribuicoes_base},
 
         # Cenário 3:  Aumento de uma enfermeira triagem, secretária e um clínico
@@ -374,8 +385,9 @@ if __name__ == "__main__":
                                  "Raio-x": [1, True],
                                  "Eletro": [1, True],
                                  "Técnica de Enfermagem": [2, True],
-                                 "Espaço para tomar Medicação": [8, True]
-                                 }, "distribuicoes": distribuicoes_base},
+                                 "Espaço para tomar Medicação": [8, True],
+                                 "Default_Aguarda_Medicacao": [100000, False]},
+                                "distribuicoes": distribuicoes_base},
 
     }
 
@@ -399,7 +411,7 @@ if __name__ == "__main__":
 
 
         CorridaSimulacao_cenario = CorridaSimulacao(
-            replicacoes=replicacoes,
+            replicacoes=53, #replicacoes,
             simulacao=simulacao_cenario,
             duracao_simulacao=tempo,
             periodo_warmup=warmup,
@@ -444,19 +456,6 @@ if __name__ == "__main__":
     df_filas_por_prioridade.media_minutos = round(df_filas_por_prioridade.media_minutos,2)
     df_utilizacao_por_recurso.utilizacao = round(df_utilizacao_por_recurso.utilizacao * 100)
 
-    # Jogar todos os dados que utilizei para calcular essas estatísticas
-    # Calcular as estatísticas do fim de cada cenário
-    # Comparar com os resultados obtidos no python
-    # Rodar cenário que gera poucos dados (10 pacientes)
-
-    # Revisar o calculo da quantidade de corridas
-    # nível de ocupação dos clínicos como métrica para calculo de número de replicações conforme indicado no TCC.
-
-
-
-
-
-    #Junção dos dados brutos das dataframes de cada cenário!
     df_estatisticas_bruto = pd.DataFrame()
     df_recursos = pd.DataFrame()
     df_entidades = pd.DataFrame()
