@@ -87,7 +87,7 @@ def converte_segundos_em_meses(x):
 if __name__ == "__main__":
 
     #Dados e parâmetros default em todos os cenários:
-    seed(1000)
+    #seed(1000)
     ordem_processo = {
         "Ficha": "Triagem",
         "Triagem": ["decide_atendimento"],
@@ -233,7 +233,7 @@ if __name__ == "__main__":
     distribuicoes_probabilidade = calcula_distribuicoes_prob()
 
     warmup = 50000
-    replicacoes = 16
+    replicacoes = 30
     #seed(1000)
     recursos_base = {"Secretária": [2, False],
                                "Enfermeira de Triagem": [2, False],
@@ -283,15 +283,16 @@ if __name__ == "__main__":
                                   )
 
     CorridaSimulacao_base = CorridaSimulacao(
-            replicacoes=5,
+            replicacoes=30,
             simulacao=simulacao_base,
             duracao_simulacao=tempo,
             periodo_warmup=50000,
             plota_histogramas=True
         )
 
-    CorridaSimulacao_base.roda_simulacao()
-    CorridaSimulacao_base.fecha_estatisticas_experimento()
+    #CorridaSimulacao_base.roda_simulacao()
+    #CorridaSimulacao_base.fecha_estatisticas_experimento()
+    #CorridaSimulacao_base.fecha_estatisticas_experimento()
     # CorridaSimulacao_base.df_estatisticas_entidades.to_excel("df_entidades.xlsx")
     # CorridaSimulacao_base.df_estatisticas_recursos.to_excel("df_recursos.xlsx")
     # CorridaSimulacao_base.df_estatistcas_sistemas_brutos.to_excel("df_WIP.xlsx")
@@ -324,7 +325,6 @@ if __name__ == "__main__":
                  }
 
         return dados[processo]
-
 
     cenarios = {
         # Cenário 1: Diminuindo uma secretária
@@ -391,8 +391,6 @@ if __name__ == "__main__":
 
     }
 
-
-
     estatisticas_finais = dict()
     corridas = list()
     #Rodada dos cenários
@@ -411,7 +409,7 @@ if __name__ == "__main__":
 
 
         CorridaSimulacao_cenario = CorridaSimulacao(
-            replicacoes=53, #replicacoes,
+            replicacoes= replicacoes,
             simulacao=simulacao_cenario,
             duracao_simulacao=tempo,
             periodo_warmup=warmup,
@@ -465,266 +463,203 @@ if __name__ == "__main__":
         df_recursos = pd.concat([df_recursos, cor.df_estatisticas_recursos])
         df_entidades = pd.concat([df_entidades, cor.df_estatisticas_entidades])
 
-
+    df_recursos = df_recursos.loc[df_recursos.recurso != "Default_Aguarda_Medicacao"].reset_index()
 
     graficos_de_todas_as_replicacoes_juntas = False
     traduz = True
+    gera_graficos = True #Não consegui gerar gráficos devido a quantidade de dados e memória. Se o computador de quem está rodando aguentar, passar flag como true. Senão, passar como false, gerar os arquivos csv e rodar o  próximo script
+    if gera_graficos:
+        if traduz:
+            dicionario_traduzido_recursos = {
+                "Secretária": "Secretariat",  # De 2 para 1
+                 "Enfermeira de Triagem": "Nurse Screening",
+                 "Clínico": "Clinic",
+                 "Pediatra": "Pediatrician",
+                 "Raio-x": "X-Ray",
+                 "Eletro": "Electrocardiogram" ,
+                 "Técnica de Enfermagem": "Nursing Technician",
+                 "Espaço para tomar Medicação": "Medication Space"
+            }
 
-    if traduz:
-        dicionario_traduzido_recursos = {
-            "Secretária": "Secretariat",  # De 2 para 1
-             "Enfermeira de Triagem": "Nurse Screening",
-             "Clínico": "Clinic",
-             "Pediatra": "Pediatrician",
-             "Raio-x": "X-Ray",
-             "Eletro": "Electrocardiogram" ,
-             "Técnica de Enfermagem": "Nursing Technician",
-             "Espaço para tomar Medicação": "Medication Space"
-        }
+            dicionario_traduzido_processos = {
+                "Ficha": "Registration of Patient",
+                "Triagem": "Screening",
+                "Clínico": " Clinical Consultation",
+                "Pediatra": "Pediatric Consultation",
+                "Aplicar Medicação": "Applying Medication",
+                "Tomar Medicação": "Taking Medication" ,
+                "Exame de Urina": "Urine Test",
+                "Exame de Sangue": "Blood Test" ,
+                "Análise de Urina": "Urine Test Analysis",
+                "Análise de Sangue Externo": "External Blood Test Analysis" ,
+                "Análise de Sangue Interno": "Internal Blood Test Analysis",
+                "Raio-x": "X-Ray",
+                "Eletro": "Electrocardiogram",
+                "chegada": "Arrive",
+                "saida": "Exit",
+                "Aguarda Resultado de Exame": "Waiting Examination Results"
+            }
 
-        dicionario_traduzido_processos = {
-            "Ficha": "Registration of Patient",
-            "Triagem": "Screening",
-            "Clínico": " Clinical Consultation",
-            "Pediatra": "Pediatric Consultation",
-            "Aplicar Medicação": "Applying Medication",
-            "Tomar Medicação": "Taking Medication" ,
-            "Exame de Urina": "Urine Test",
-            "Exame de Sangue": "Blood Test" ,
-            "Análise de Urina": "Urine Test Analysis",
-            "Análise de Sangue Externo": "External Blood Test Analysis" ,
-            "Análise de Sangue Interno": "Internal Blood Test Analysis",
-            "Raio-x": "X-Ray",
-            "Eletro": "Electrocardiogram",
-            "chegada": "Arrive",
-            "saida": "Exit",
-            "Aguarda Resultado de Exame": "Waiting Examination Results"
-        }
+            df_total_pacientes.rename(columns={"Cenario": "Scenarios", "Atendimentos": "Patients Seen"}, inplace=True)
+            df_utilizacao_media.rename(columns={"Cenario": "Scenarios", "Utilização": "Resources Usage (%)"}, inplace=True)
+            df_fila_media.rename(columns={"Cenario": "Scenarios", "Tempo_Médio_de_Fila": "Queue Average Time (Min)"} ,inplace=True)
+            df_utilizacao_por_recurso.rename(columns={"recurso": "Resource", "utilizacao" : "Resources Usage (%)", "Cenário": "Scenarios"}, inplace=True)
+            df_utilizacao_por_recurso['Resource'] = df_utilizacao_por_recurso.Resource.apply(lambda x: dicionario_traduzido_recursos[x])
+            df_filas_por_prioridade.rename(columns={"prioridade": "Patient Priority", "media_minutos": "Queue Average (Min)",  "Cenário": "Scenarios"},inplace=True)
+            df_estatisticas_bruto.rename(columns={'cenario': "Scenarios", "Replicacao": "Run"}, inplace=True)
+            df_recursos.rename(columns={'cenario': "Scenarios", "recurso": "Resource", "utilizacao" : "Resources Usage (%)",  "Replicacao": "Run"}, inplace=True)
+            df_recursos['Resource'] = df_recursos.Resource.apply(lambda x: dicionario_traduzido_recursos[x])
+            df_entidades.rename(columns={"entidade": "Entity", "processo": "Process", 'prioridade': "Patient Priority", 'cenario': "Scenarios"}, inplace=True)
+            df_entidades["Process"] = df_entidades["Process"].apply(lambda x: dicionario_traduzido_processos[x])
+            df_entidades['Queue Time (Min)'] =  round(df_entidades.tempo_fila/60,2)
+            CHART_THEME = 'plotly_white'
 
-        df_total_pacientes.rename(columns={"Cenario": "Scenarios", "Atendimentos": "Patients Seen"}, inplace=True)
-        df_utilizacao_media.rename(columns={"Cenario": "Scenarios", "Utilização": "Resources Usage (%)"}, inplace=True)
-        df_fila_media.rename(columns={"Cenario": "Scenarios", "Tempo_Médio_de_Fila": "Queue Average Time (Min)"} ,inplace=True)
-        df_utilizacao_por_recurso.rename(columns={"recurso": "Resource", "utilizacao" : "Resources Usage (%)", "Cenário": "Scenarios"}, inplace=True)
-        df_utilizacao_por_recurso['Resource'] = df_utilizacao_por_recurso.Resource.apply(lambda x: dicionario_traduzido_recursos[x])
-        df_filas_por_prioridade.rename(columns={"prioridade": "Patient Priority", "media_minutos": "Queue Average (Min)",  "Cenário": "Scenarios"},inplace=True)
-        df_estatisticas_bruto.rename(columns={'cenario': "Scenarios", "Replicacao": "Run"}, inplace=True)
-        df_recursos.rename(columns={'cenario': "Scenarios", "recurso": "Resource", "utilizacao" : "Resources Usage (%)",  "Replicacao": "Run"}, inplace=True)
-        df_recursos['Resource'] = df_recursos.Resource.apply(lambda x: dicionario_traduzido_recursos[x])
-        df_entidades.rename(columns={"entidade": "Entity", "processo": "Process", 'prioridade': "Patient Priority", 'cenario': "Scenarios"}, inplace=True)
-        df_entidades["Process"] = df_entidades["Process"].apply(lambda x: dicionario_traduzido_processos[x])
-        df_entidades['Queue Time (Min)'] =  round(df_entidades.tempo_fila/60,2)
-        CHART_THEME = 'plotly_white'
+            #Gerar gráficos de cada simulação para todas as corridas!!
+            #Gráfico WIP!
 
-        #Gerar gráficos de cada simulação para todas as corridas!!
-        #Gráfico WIP!
+            df_estatisticas_bruto['Scenario-Run'] = df_estatisticas_bruto.apply(lambda x: x.Scenarios + " - " + "Run " +str(x.Run), axis=1)
+            df_scenario_run_WIP = df_estatisticas_bruto.groupby(by=['Scenario-Run', 'discretizacao', 'Scenarios']).agg({"WIP": "mean"}).reset_index()
+            duracao_dias_sr = [converte_segundos_em_dias(x) for x in
+                              df_scenario_run_WIP.discretizacao]
+            fig = px.line(df_scenario_run_WIP, x=duracao_dias_sr, y=df_scenario_run_WIP.WIP, color="Scenarios")
+            fig.update_layout(title='Global Average Entities in Process (WIP)')
+            fig.update_xaxes(title='Duration (D)', showgrid=False)
+            fig.update_yaxes(title='Number os Patients')
+            fig.layout.template = CHART_THEME
+            fig.update_layout(title_x=0.5)
 
-        df_estatisticas_bruto['Scenario-Run'] = df_estatisticas_bruto.apply(lambda x: x.Scenarios + " - " + "Run " +str(x.Run), axis=1)
-        df_scenario_run_WIP = df_estatisticas_bruto.groupby(by=['Scenario-Run', 'discretizacao', 'Scenarios']).agg({"WIP": "mean"}).reset_index()
-        duracao_dias_sr = [converte_segundos_em_dias(x) for x in
-                          df_scenario_run_WIP.discretizacao]
-        fig = px.line(df_scenario_run_WIP, x=duracao_dias_sr, y=df_scenario_run_WIP.WIP, color="Scenarios")
-        fig.update_layout(title='Global Average Entities in Process (WIP)')
-        fig.update_xaxes(title='Duration (D)', showgrid=False)
-        fig.update_yaxes(title='Number os Patients')
-        fig.layout.template = CHART_THEME
-        fig.update_layout(title_x=0.5)
-
-        fig.show()
-
-
-        df_recursos['Scenario-Run'] = df_recursos.apply(lambda x: x.Scenarios + " - " + "Run " + str(x.Run), axis = 1)
-        df_recursos['Scenario-Run-Resource'] = df_recursos.apply(lambda x: x.Scenarios + " - " + "Run " + str(x.Run) + x.Resource, axis=1)
-        df_recursos['Scenario-Resource'] = df_recursos.apply(lambda x: x.Scenarios + " - "  +  x.Resource, axis=1)
-        #Média de todos os recursos por replicação!!!
-        df_rec_scenario_run = df_recursos.groupby(by=['Scenario-Resource', 'T', 'Resource']).agg({"Resources Usage (%)": "mean"}).reset_index()
-        fig = px.line(df_rec_scenario_run,
-                      x="T", y="Resources Usage (%)", color="Scenario-Resource", title='Resources Utilization') #hover_data='Scenario-Resource')
-        fig.layout.template = CHART_THEME
-        fig.update_xaxes(title='Duration (D)', showgrid=False)
-        # fig.update_yaxes(title='Utilização dos Recursos (%)')
-        fig.update_layout(title_x=0.5)
-        fig.show()
-
-        if graficos_de_todas_as_replicacoes_juntas:
-            media_de_todas_as_replicações = True
-            #Teste:
-            if media_de_todas_as_replicações:
-                df = df_estatisticas_bruto.groupby(by=['Scenarios', 'discretizacao']).agg({"WIP": "mean"}).reset_index()
-                duracao_dias_2 = [converte_segundos_em_dias(x) for x in
-                                df.discretizacao]
-
-                fig = px.line(df, x=duracao_dias_2, y=df.WIP, color="Scenarios")
-                fig.update_layout(title='Global Average Entities in Process (WIP)')
-                fig.update_xaxes(title='Duration (D)', showgrid=False)
-                fig.update_yaxes(title='Number os Patients')
-                fig.layout.template = CHART_THEME
-                fig.update_layout(title_x=0.5)
-
-                fig.show()
-
-                df_2 = df_recursos.groupby(by=['Scenarios', 'Resource', 'T']).agg({"Resources Usage (%)": "mean"}).reset_index()
-                fig = px.line(df_2,
-                              x="T", y="Resources Usage (%)", color="Resource", title='Resources Utilization')
-                fig.layout.template = CHART_THEME
-                fig.update_xaxes(title='Duration (D)', showgrid=False)
-                # fig.update_yaxes(title='Utilização dos Recursos (%)')
-                fig.update_layout(title_x=0.5)
-                fig.show()
-
-            else:
-                duracao_dias = [converte_segundos_em_dias(x) for x in
-                                df_estatisticas_bruto.discretizacao]
-                fig = px.line(df_estatisticas_bruto, x=duracao_dias, y=df_estatisticas_bruto.WIP, color="Scenarios")
-                fig.update_layout(title='Entities in Process (WIP)')
-                fig.update_xaxes(title='Duration (D)', showgrid=False)
-                fig.update_yaxes(title='Number os Patients')
-                fig.layout.template = CHART_THEME
-                #fig.layout.width = 1000
-                fig.update_layout(title_x=0.5)
-
-                fig.show()
+            fig.show()
 
 
-            #Utilização dos recursos no tempo!
-            fig = px.line(df_recursos,
-                          x="T", y="Resources Usage (%)", color="Resource", title='Resources Utilization')
+            df_recursos['Scenario-Run'] = df_recursos.apply(lambda x: x.Scenarios + " - " + "Run " + str(x.Run), axis = 1)
+            df_recursos['Scenario-Run-Resource'] = df_recursos.apply(lambda x: x.Scenarios + " - " + "Run " + str(x.Run) + x.Resource, axis=1)
+            df_recursos['Scenario-Resource'] = df_recursos.apply(lambda x: x.Scenarios + " - "  +  x.Resource, axis=1)
+            #Média de todos os recursos por replicação!!!
+            df_rec_scenario_run = df_recursos.groupby(by=['Scenario-Resource', 'T', 'Resource']).agg({"Resources Usage (%)": "mean"}).reset_index()
+            fig = px.line(df_rec_scenario_run,
+                          x="T", y="Resources Usage (%)", color="Scenario-Resource", title='Resources Utilization') #hover_data='Scenario-Resource')
             fig.layout.template = CHART_THEME
             fig.update_xaxes(title='Duration (D)', showgrid=False)
-            #fig.update_yaxes(title='Utilização dos Recursos (%)')
+            # fig.update_yaxes(title='Utilização dos Recursos (%)')
             fig.update_layout(title_x=0.5)
             fig.show()
 
-        else:
-            for cen in cenarios:
-                df_estatisticas_aux = df_estatisticas_bruto.loc[df_estatisticas_bruto.Scenarios == cen]
-                df_recursos_aux = df_recursos.loc[df_recursos.Scenarios == cen]
-                df_entidades_aux = df_entidades.loc[df_entidades.Scenarios == cen]
-                duracao_dias = [converte_segundos_em_dias(x) for x in df_estatisticas_aux.discretizacao]
-                fig = px.line(df_estatisticas_aux, x=duracao_dias, y=df_estatisticas_aux.WIP, color=df_estatisticas_aux["Run"])
-                fig.update_layout(title=f'Entities in Process (WIP) Scenario {cen}')
-                fig.update_xaxes(title='Duration (D)', showgrid=False)
-                fig.update_yaxes(title='Number os Patients')
-                fig.layout.template = CHART_THEME
-                #fig.layout.width = 1000
-                fig.update_layout(title_x=0.5)
+            if graficos_de_todas_as_replicacoes_juntas:
+                media_de_todas_as_replicações = True
+                #Teste:
+                if media_de_todas_as_replicações:
+                    df = df_estatisticas_bruto.groupby(by=['Scenarios', 'discretizacao']).agg({"WIP": "mean"}).reset_index()
+                    duracao_dias_2 = [converte_segundos_em_dias(x) for x in
+                                    df.discretizacao]
 
-                fig.show()
+                    fig = px.line(df, x=duracao_dias_2, y=df.WIP, color="Scenarios")
+                    fig.update_layout(title='Global Average Entities in Process (WIP)')
+                    fig.update_xaxes(title='Duration (D)', showgrid=False)
+                    fig.update_yaxes(title='Number os Patients')
+                    fig.layout.template = CHART_THEME
+                    fig.update_layout(title_x=0.5)
+
+                    fig.show()
+
+                    df_2 = df_recursos.groupby(by=['Scenarios', 'Resource', 'T']).agg({"Resources Usage (%)": "mean"}).reset_index()
+                    fig = px.line(df_2,
+                                  x="T", y="Resources Usage (%)", color="Resource", title='Resources Utilization')
+                    fig.layout.template = CHART_THEME
+                    fig.update_xaxes(title='Duration (D)', showgrid=False)
+                    # fig.update_yaxes(title='Utilização dos Recursos (%)')
+                    fig.update_layout(title_x=0.5)
+                    fig.show()
+
+                else:
+                    duracao_dias = [converte_segundos_em_dias(x) for x in
+                                    df_estatisticas_bruto.discretizacao]
+                    fig = px.line(df_estatisticas_bruto, x=duracao_dias, y=df_estatisticas_bruto.WIP, color="Scenarios")
+                    fig.update_layout(title='Entities in Process (WIP)')
+                    fig.update_xaxes(title='Duration (D)', showgrid=False)
+                    fig.update_yaxes(title='Number os Patients')
+                    fig.layout.template = CHART_THEME
+                    #fig.layout.width = 1000
+                    fig.update_layout(title_x=0.5)
+
+                    fig.show()
+
 
                 #Utilização dos recursos no tempo!
-
-                fig = px.line(df_recursos_aux,
-                              x="T", y="Resources Usage (%)", color="Resource", title=f'Resources Utilization Scenario {cen}')
+                fig = px.line(df_recursos,
+                              x="T", y="Resources Usage (%)", color="Resource", title='Resources Utilization')
                 fig.layout.template = CHART_THEME
                 fig.update_xaxes(title='Duration (D)', showgrid=False)
                 #fig.update_yaxes(title='Utilização dos Recursos (%)')
                 fig.update_layout(title_x=0.5)
                 fig.show()
 
-                #Média tempo fila por prioridade e processo
-                df_tempo_fila_prioridade = df_entidades_aux.groupby(by=['Process', "Patient Priority"]).agg({"Queue Time (Min)": "mean"}).reset_index()
-                df_tempo_fila_prioridade["Queue Time (Min)"] = round(df_tempo_fila_prioridade["Queue Time (Min)"], 2)
-                fig = px.bar(df_tempo_fila_prioridade, x='Patient Priority', y='Queue Time (Min)', color='Process', text="Queue Time (Min)", title=f"Process Queue Patient Priority in Scenario {cen}")
+            else:
+                for cen in cenarios:
+                    df_estatisticas_aux = df_estatisticas_bruto.loc[df_estatisticas_bruto.Scenarios == cen]
+                    df_recursos_aux = df_recursos.loc[df_recursos.Scenarios == cen]
+                    df_entidades_aux = df_entidades.loc[df_entidades.Scenarios == cen]
+                    duracao_dias = [converte_segundos_em_dias(x) for x in df_estatisticas_aux.discretizacao]
+                    fig = px.line(df_estatisticas_aux, x=duracao_dias, y=df_estatisticas_aux.WIP, color=df_estatisticas_aux["Run"])
+                    fig.update_layout(title=f'Entities in Process (WIP) Scenario {cen}')
+                    fig.update_xaxes(title='Duration (D)', showgrid=False)
+                    fig.update_yaxes(title='Number os Patients')
+                    fig.layout.template = CHART_THEME
+                    #fig.layout.width = 1000
+                    fig.update_layout(title_x=0.5)
 
-                fig.update_traces(texttemplate='%{text}')
-                fig.layout.template = CHART_THEME
-                fig.update_traces(textposition='outside')
-                fig.update_yaxes(showticklabels=False)
-                #fig.update_xaxes(showticklabels=False)
-                fig.update_layout(title_x=0.5)
-                fig.show()
-                b=0
+                    fig.show()
 
-        #Tempo médio e fila por processo
-        df_tempo_fila_processo = df_entidades.groupby(by=['Scenarios', "Process"]).agg({"Queue Time (Min)": "mean"}).reset_index()
-        df_tempo_fila_processo["Queue Time (Min)"] = round(df_tempo_fila_processo["Queue Time (Min)"],2)
-        fig = px.bar(df_tempo_fila_processo, x='Process', y='Queue Time (Min)', color='Scenarios' ,text="Queue Time (Min)", title= "Process Queue Time by Scenarios")
-        fig.update_traces(texttemplate='%{text}')
-        fig.layout.template = CHART_THEME
-        fig.update_traces(textposition='outside')
-        fig.update_yaxes(showticklabels=False)
-        #fig.update_xaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-        fig.show()
+                    #Utilização dos recursos no tempo!
 
+                    fig = px.line(df_recursos_aux,
+                                  x="T", y="Resources Usage (%)", color="Resource", title=f'Resources Utilization Scenario {cen}')
+                    fig.layout.template = CHART_THEME
+                    fig.update_xaxes(title='Duration (D)', showgrid=False)
+                    #fig.update_yaxes(title='Utilização dos Recursos (%)')
+                    fig.update_layout(title_x=0.5)
+                    fig.show()
 
-        #Tempo médio de fila por prioridade!
-        df_tempo_fila_prioridade = df_entidades.groupby(by=['Scenarios', "Patient Priority"]).agg({"Queue Time (Min)": "mean"}).reset_index()
-        df_tempo_fila_prioridade["Queue Time (Min)"] = round(df_tempo_fila_prioridade["Queue Time (Min)"],2)
-        fig = px.bar(df_tempo_fila_prioridade, x='Patient Priority', y='Queue Time (Min)', color='Scenarios' ,text="Queue Time (Min)", title= "Process Queue Patient Priority")
-        fig.update_traces(texttemplate='%{text}')
-        fig.layout.template = CHART_THEME
-        fig.update_traces(textposition='outside')
-        fig.update_yaxes(showticklabels=False)
-        #fig.update_xaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-        fig.show()
+                    #Média tempo fila por prioridade e processo
+                    df_tempo_fila_prioridade = df_entidades_aux.groupby(by=['Process', "Patient Priority"]).agg({"Queue Time (Min)": "mean"}).reset_index()
+                    df_tempo_fila_prioridade["Queue Time (Min)"] = round(df_tempo_fila_prioridade["Queue Time (Min)"], 2)
+                    fig = px.bar(df_tempo_fila_prioridade, x='Patient Priority', y='Queue Time (Min)', color='Process', text="Queue Time (Min)", title=f"Process Queue Patient Priority in Scenario {cen}")
 
+                    fig.update_traces(texttemplate='%{text}')
+                    fig.layout.template = CHART_THEME
+                    fig.update_traces(textposition='outside')
+                    fig.update_yaxes(showticklabels=False)
+                    #fig.update_xaxes(showticklabels=False)
+                    fig.update_layout(title_x=0.5)
+                    fig.show()
+                    b=0
 
-        #total de pacientes atendidos!
-        fig = px.bar(df_total_pacientes, x='Scenarios', y='Patients Seen', text="Patients Seen",  title="Patients Seen by Scenarios")
-        fig.update_traces(texttemplate='%{text}')
-        fig.layout.template = CHART_THEME
-        fig.update_traces(textposition='outside')
-        fig.update_yaxes(showticklabels=False)
-        fig.update_xaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-        fig.show()
+            #Tempo médio e fila por processo
+            df_tempo_fila_processo = df_entidades.groupby(by=['Scenarios', "Process"]).agg({"Queue Time (Min)": "mean"}).reset_index()
+            df_tempo_fila_processo["Queue Time (Min)"] = round(df_tempo_fila_processo["Queue Time (Min)"],2)
+            fig = px.bar(df_tempo_fila_processo, x='Process', y='Queue Time (Min)', color='Scenarios' ,text="Queue Time (Min)", title= "Process Queue Time by Scenarios")
+            fig.update_traces(texttemplate='%{text}')
+            fig.layout.template = CHART_THEME
+            fig.update_traces(textposition='outside')
+            fig.update_yaxes(showticklabels=False)
+            #fig.update_xaxes(showticklabels=False)
+            fig.update_layout(title_x=0.5)
+            fig.show()
 
 
-        #Utiização Média de Recursos
-        fig = px.bar(df_utilizacao_por_recurso, x='Resource', y='Resources Usage (%)', color='Scenarios', barmode='group',
-                     text='Resources Usage (%)', title='Average Utilization Resources in Scenarios')  # text="nation"
-        fig.update_traces(texttemplate='%{text:.2s}')
-        fig.layout.template = CHART_THEME
-        fig.update_traces(textposition='outside')
-        #fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
-        #fig.update_xaxes(title='Recurso', showgrid=False)
-        fig.update_yaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-        fig.show()
+            #Tempo médio de fila por prioridade!
+            df_tempo_fila_prioridade = df_entidades.groupby(by=['Scenarios', "Patient Priority"]).agg({"Queue Time (Min)": "mean"}).reset_index()
+            df_tempo_fila_prioridade["Queue Time (Min)"] = round(df_tempo_fila_prioridade["Queue Time (Min)"],2)
+            fig = px.bar(df_tempo_fila_prioridade, x='Patient Priority', y='Queue Time (Min)', color='Scenarios' ,text="Queue Time (Min)", title= "Process Queue Patient Priority")
+            fig.update_traces(texttemplate='%{text}')
+            fig.layout.template = CHART_THEME
+            fig.update_traces(textposition='outside')
+            fig.update_yaxes(showticklabels=False)
+            #fig.update_xaxes(showticklabels=False)
+            fig.update_layout(title_x=0.5)
+            fig.show()
 
-        #Gráfico de utilização Cenário x Recurso
-        fig = px.bar(df_utilizacao_por_recurso, x='Scenarios', y='Resources Usage (%)', color='Resource',
-                     barmode='group',
-                     text='Resources Usage (%)', title='Average Utilization Resources in Scenarios')  # text="nation"
-        fig.update_traces(texttemplate='%{text:.2s}')
-        fig.layout.template = CHART_THEME
-        fig.update_traces(textposition='outside')
-        # fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
-        # fig.update_xaxes(title='Recurso', showgrid=False)
-        fig.update_yaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-        fig.show()
 
-        #Filas por prioridade!
-        fig = px.bar(df_filas_por_prioridade, x='Patient Priority', y='Queue Average (Min)', color='Scenarios', barmode='group',
-                     text='Queue Average (Min)', title='Patient Queues by Priority in Scenarios')  # text="nation"
-        fig.update_traces(texttemplate='%{text:.2s}')
-        fig.layout.template = CHART_THEME
-        fig.update_traces(textposition='outside')
-        #fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
-        #fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
-        fig.update_yaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-
-        fig.show()
-
-        #Filas por prioridade e processos!
-        fig = px.bar(df_filas_por_prioridade, x='Scenarios', y='Queue Average (Min)', color='Patient Priority', barmode='group',
-                     text='Queue Average (Min)', title='Patient Queues by Priority in Scenarios')  # text="nation"
-        fig.update_traces(texttemplate='%{text:.2s}')
-        fig.layout.template = CHART_THEME
-        fig.update_traces(textposition='outside')
-        #fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
-        #fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
-        fig.update_yaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-
-        fig.show()
-
-    else:
-        try:
-            CHART_THEME = 'plotly_white'
+            #total de pacientes atendidos!
             fig = px.bar(df_total_pacientes, x='Scenarios', y='Patients Seen', text="Patients Seen",  title="Patients Seen by Scenarios")
             fig.update_traces(texttemplate='%{text}')
             fig.layout.template = CHART_THEME
@@ -733,65 +668,138 @@ if __name__ == "__main__":
             fig.update_xaxes(showticklabels=False)
             fig.update_layout(title_x=0.5)
             fig.show()
-            #Utilização geral média
-            fig = px.bar(df_utilizacao_media, x='Cenario', y='Utilização')
+
+
+            #Utiização Média de Recursos
+            fig = px.bar(df_utilizacao_por_recurso, x='Resource', y='Resources Usage (%)', color='Scenarios', barmode='group',
+                         text='Resources Usage (%)', title='Average Utilization Resources in Scenarios')  # text="nation"
+            fig.update_traces(texttemplate='%{text:.2s}')
+            fig.layout.template = CHART_THEME
+            fig.update_traces(textposition='outside')
+            #fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+            #fig.update_xaxes(title='Recurso', showgrid=False)
+            fig.update_yaxes(showticklabels=False)
+            fig.update_layout(title_x=0.5)
             fig.show()
-        except:
+
+            #Gráfico de utilização Cenário x Recurso
+            fig = px.bar(df_utilizacao_por_recurso, x='Scenarios', y='Resources Usage (%)', color='Resource',
+                         barmode='group',
+                         text='Resources Usage (%)', title='Average Utilization Resources in Scenarios')  # text="nation"
+            fig.update_traces(texttemplate='%{text:.2s}')
+            fig.layout.template = CHART_THEME
+            fig.update_traces(textposition='outside')
+            # fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+            # fig.update_xaxes(title='Recurso', showgrid=False)
+            fig.update_yaxes(showticklabels=False)
+            fig.update_layout(title_x=0.5)
+            fig.show()
+
+            #Filas por prioridade!
+            fig = px.bar(df_filas_por_prioridade, x='Patient Priority', y='Queue Average (Min)', color='Scenarios', barmode='group',
+                         text='Queue Average (Min)', title='Patient Queues by Priority in Scenarios')  # text="nation"
+            fig.update_traces(texttemplate='%{text:.2s}')
+            fig.layout.template = CHART_THEME
+            fig.update_traces(textposition='outside')
+            #fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+            #fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+            fig.update_yaxes(showticklabels=False)
+            fig.update_layout(title_x=0.5)
+
+            fig.show()
+
+            #Filas por prioridade e processos!
+            fig = px.bar(df_filas_por_prioridade, x='Scenarios', y='Queue Average (Min)', color='Patient Priority', barmode='group',
+                         text='Queue Average (Min)', title='Patient Queues by Priority in Scenarios')  # text="nation"
+            fig.update_traces(texttemplate='%{text:.2s}')
+            fig.layout.template = CHART_THEME
+            fig.update_traces(textposition='outside')
+            #fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+            #fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+            fig.update_yaxes(showticklabels=False)
+            fig.update_layout(title_x=0.5)
+
+            fig.show()
+
+        else:
+            try:
+                CHART_THEME = 'plotly_white'
+                fig = px.bar(df_total_pacientes, x='Scenarios', y='Patients Seen', text="Patients Seen",  title="Patients Seen by Scenarios")
+                fig.update_traces(texttemplate='%{text}')
+                fig.layout.template = CHART_THEME
+                fig.update_traces(textposition='outside')
+                fig.update_yaxes(showticklabels=False)
+                fig.update_xaxes(showticklabels=False)
+                fig.update_layout(title_x=0.5)
+                fig.show()
+                #Utilização geral média
+                # fig = px.bar(df_utilizacao_media, x='Cenario', y='Utilização')
+                # fig.show()
+            except:
+                b=0
+            recursos = pd.unique(df_utilizacao_por_recurso.recurso)
+
+
+            #eixo x = recurso, cenário
+            fig = px.bar(df_utilizacao_por_recurso, x='recurso', y='utilizacao', color='Cenário', barmode='group', text='utilizacao', title=' Utilização Média de Recursos nos Cenários')  #text="nation"
+            fig.update_traces(texttemplate='%{text:.2s}')
+            fig.layout.template = CHART_THEME
+            fig.update_traces(textposition='outside')
+            fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+            fig.update_xaxes(title='Recurso', showgrid=False)
+            fig.update_yaxes(showticklabels=False)
+            fig.update_layout(title_x=0.5)
+
+            fig.show()
+
+            #eixo x = cenário
+            fig = px.bar(df_utilizacao_por_recurso, x='Cenário', y='utilizacao', color='recurso', barmode='group' , text_auto=True, text="utilizacao",  title='Comparativo de Utilização de Recursos em Diferentes Cenários')
+            fig.update_traces(texttemplate='%{text:.2s}')
+            fig.layout.template = CHART_THEME
+            fig.update_traces(textposition='outside')
+            fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+            fig.update_xaxes(title='Recurso', showgrid=False)
+            fig.update_yaxes(showticklabels=False)
+            fig.update_layout(title_x=0.5)
+            fig.show()
+
+
+
+            #fila por prioridade: - Prioridade no eixo x
+            fig = px.bar(df_filas_por_prioridade, x='prioridade', y='media_minutos', color='Cenário', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
+            fig.update_traces(texttemplate='%{text:.2s}')
+            fig.layout.template = CHART_THEME
+            fig.update_traces(textposition='outside')
+            fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+            fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+            fig.update_yaxes(showticklabels=False)
+            fig.update_layout(title_x=0.5)
+
+            fig.show()
+
+            #fila por prioridade: - Cenário no eixo x
+            fig = px.bar(df_filas_por_prioridade, x='Cenário', y='media_minutos', color='prioridade', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
+            fig.update_traces(texttemplate='%{text:.2s}')
+            fig.layout.template = CHART_THEME
+            fig.update_traces(textposition='outside')
+            fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
+            fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
+            fig.update_yaxes(showticklabels=False)
+            fig.update_layout(title_x=0.5)
+
+            fig.show()
+
             b=0
-        recursos = pd.unique(df_utilizacao_por_recurso.recurso)
 
-
-        #eixo x = recurso, cenário
-        fig = px.bar(df_utilizacao_por_recurso, x='recurso', y='utilizacao', color='Cenário', barmode='group', text='utilizacao', title=' Utilização Média de Recursos nos Cenários')  #text="nation"
-        fig.update_traces(texttemplate='%{text:.2s}')
-        fig.layout.template = CHART_THEME
-        fig.update_traces(textposition='outside')
-        fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
-        fig.update_xaxes(title='Recurso', showgrid=False)
-        fig.update_yaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-
-        fig.show()
-
-        #eixo x = cenário
-        fig = px.bar(df_utilizacao_por_recurso, x='Cenário', y='utilizacao', color='recurso', barmode='group' , text_auto=True, text="utilizacao",  title='Comparativo de Utilização de Recursos em Diferentes Cenários')
-        fig.update_traces(texttemplate='%{text:.2s}')
-        fig.layout.template = CHART_THEME
-        fig.update_traces(textposition='outside')
-        fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
-        fig.update_xaxes(title='Recurso', showgrid=False)
-        fig.update_yaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-        fig.show()
-
-
-
-        #fila por prioridade: - Prioridade no eixo x
-        fig = px.bar(df_filas_por_prioridade, x='prioridade', y='media_minutos', color='Cenário', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
-        fig.update_traces(texttemplate='%{text:.2s}')
-        fig.layout.template = CHART_THEME
-        fig.update_traces(textposition='outside')
-        fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
-        fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
-        fig.update_yaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-
-        fig.show()
-
-        #fila por prioridade: - Cenário no eixo x
-        fig = px.bar(df_filas_por_prioridade, x='Cenário', y='media_minutos', color='prioridade', barmode='group', text='media_minutos', title='Comparativo de Filas por Prioridade de Pacientes')  #text="nation"
-        fig.update_traces(texttemplate='%{text:.2s}')
-        fig.layout.template = CHART_THEME
-        fig.update_traces(textposition='outside')
-        fig.update_yaxes(title='Fila Média (Min)', showgrid=False)
-        fig.update_xaxes(title='Prioridade do Paciente', showgrid=False)
-        fig.update_yaxes(showticklabels=False)
-        fig.update_layout(title_x=0.5)
-
-        fig.show()
-
-        b=0
-
-    b=0
-    #TODO:
+    else:
+        with pd.ExcelWriter("dados_analise.xlsx") as writer:
+            df_total_pacientes.to_excel(writer, sheet_name="df_total_pacientes", index=False)
+            df_utilizacao_media.to_excel(writer, sheet_name="df_utilizacao_media", index=False)
+            df_fila_media.to_excel(writer, sheet_name="df_fila_media", index=False)
+            df_utilizacao_por_recurso.to_excel(writer, sheet_name="df_utilizacao_por_recurso", index=False)
+            df_filas_por_prioridade.to_excel(writer, sheet_name="df_filas_por_prioridade", index=False)
+            df_estatisticas_bruto.to_excel(writer, sheet_name="df_estatisticas_bruto", index=False)
+            df_recursos.to_excel(writer, sheet_name="df_recursos", index=False)
+            df_entidades.to_excel(writer, sheet_name="df_entidades", index=False)
+        writer.close()
 

@@ -812,7 +812,7 @@ class CorridaSimulacao():
             self.df_estatisticas_recursos = pd.concat([self.df_estatisticas_recursos, df_recursos])
             self.df_estatistcas_sistemas_brutos = pd.concat([self.df_estatistcas_sistemas_brutos, df_sistema_bruto])
 
-        calcula_corridas = True
+        calcula_corridas = False
         estatisticas_v2 = True
 
         # if calcula_corridas:
@@ -901,7 +901,6 @@ class CorridaSimulacao():
 
 
 
-
             #Calculos finais dos Tempos!
             medias_finais_TS = [v["media_TS"] for v in tempos_sistema_por_replicacao.values()]
             medias_finais_TA = [v["media_TA_total"] for v in tempos_sistema_por_replicacao.values()]
@@ -924,10 +923,12 @@ class CorridaSimulacao():
             print('Média de Utilização dos Recursos')
             print("-" * 90)
             rec_avaliados = [r for r in pd.unique( self.df_estatisticas_recursos.recurso) if r != 'Default_Aguarda_Medicacao']
+            list_utilizacao_medias = list()
             for r in rec_avaliados:
                 medias = [v["dict_utilizacao"][r]['media'] for v in tempos_sistema_por_replicacao.values()]
                 dados = [i for v in tempos_sistema_por_replicacao.values() for i in v["dict_utilizacao"][r]['dados']]
                 print('Media Utilização do recurso {0}: {1:.2f}% \u00B1 {2:.2f} % (IC 95%)'.format( r, np.round(np.mean(medias)*100,2), calc_ic(dados)))
+                list_utilizacao_medias.append({"recurso": r, "utilizacao": np.mean(medias)*100 })
 
             #Calculo final das entidades no sistema!
             media_das_medias_WIP = [v["media_NS_final"] for v in tempos_sistema_por_replicacao.values()]
@@ -949,20 +950,32 @@ class CorridaSimulacao():
             if calcula_corridas:
                 dados = [i/60  for v in tempos_sistema_por_replicacao.values() for i in v["dados_pr1"]]
                 medias = [v["media_pr1"] for v in tempos_sistema_por_replicacao.values()]
-                t = 2.776 #t4
-                #t = 2.145
+                #t = 2.776 #t4
+                #t = 2.145 #t14
+                #t = 2.021 #t40
+                t = 2.042 #t30
                 desvio = np.std(medias)
                 ic = [round(np.mean(medias) - (t * desvio / math.sqrt(self.replicacoes)), 4),
                       round(np.mean(medias) + (t * desvio / math.sqrt(self.replicacoes)), 4)]
-                precisao_desejada = 19 * 10 / 100 # 5% de precisao
-                h = round((t * desvio / math.sqrt(self.replicacoes)), 4)
+                precisao_desejada = 3 #np.mean(medias) * 10 / 100
+                h = round((t * (desvio / math.sqrt(self.replicacoes))), 4)
                 replicacoes_finais = np.ceil(self.replicacoes * (h / precisao_desejada) ** 2)
                 print(f'{np.mean(medias) = }'
-                      f' {t = }',
+                      f' - {t = }',
                       f' - {ic = }',
-                      f' - {h =}',
+                      f' - {h = }',
+                      f' - {precisao_desejada = }',
                       f' - {replicacoes_finais = }'
                       )
+
+
+            self.numero_atendimentos = np.mean([len(v["dados_TS"]) for v in tempos_sistema_por_replicacao.values()])
+            self.utilizacao_media = 0
+            self.media_em_fila_geral = (np.mean(medias_finais_TF), calc_ic(dados_TF))
+            auxiliar = self.df_estatisticas_entidades.groupby(by=['prioridade', 'Replicacao']).agg({'tempo_fila': 'mean'}).reset_index()
+            self.df_media_fila_por_prioridade = auxiliar.groupby(by=['prioridade']).agg({'tempo_fila': 'mean'}).reset_index()
+            self.df_media_fila_por_prioridade['media_minutos'] = round(self.df_media_fila_por_prioridade['tempo_fila']/60,2)
+            self.utilizacao_media_por_recurso = pd.DataFrame(list_utilizacao_medias)
 
         else:
             TS = [(ent.saida_sistema - ent.entrada_sistema)/60 for sim in self.simulacoes for ent in sim.entidades.lista_entidades if ent.saida_sistema > 1]
