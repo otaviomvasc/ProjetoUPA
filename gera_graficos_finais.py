@@ -15,27 +15,27 @@ def retorna_prioridade(paciente, lista_entidades):
         return "Nao Passou da Triagem"
 
 
-def analises_tempo_artigo():
-    # tempo médio espera para ficha e triagem
-    tempo_medio_ficha_e_triagem = np.mean(
-        self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo == "Ficha") | (
-                self.entidades.df_entidades.processo == "Triagem"))]['tempo_fila']) / 60
-
-    tempo_medio_atendimento = np.mean(
-        self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo == "Ficha") | (
-                self.entidades.df_entidades.processo == "Triagem"))]['tempo_processando']) / 60
-    total = tempo_medio_ficha_e_triagem + tempo_medio_atendimento
-    print(f'{total} tempo de acolhimento total em minutos')
-
-    # tempo_medio_de_espera_para_pacientes:
-    print('-' * 90)
-    df_aux = self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo != "Ficha") | (
-            self.entidades.df_entidades.processo != "Triagem"))]
-
-    df_tempo_fila_prioridade = df_aux.groupby(by=['prioridade_paciente']).agg(
-        {"tempo_fila": "mean"}).reset_index()
-    df_tempo_fila_prioridade['tempo_fila'] = round(df_tempo_fila_prioridade['tempo_fila'] / 60, 2)
-    print(f'{df_tempo_fila_prioridade =}')
+# def analises_tempo_artigo():
+#     # tempo médio espera para ficha e triagem
+#     tempo_medio_ficha_e_triagem = np.mean(
+#         self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo == "Ficha") | (
+#                 self.entidades.df_entidades.processo == "Triagem"))]['tempo_fila']) / 60
+#
+#     tempo_medio_atendimento = np.mean(
+#         self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo == "Ficha") | (
+#                 self.entidades.df_entidades.processo == "Triagem"))]['tempo_processando']) / 60
+#     total = tempo_medio_ficha_e_triagem + tempo_medio_atendimento
+#     print(f'{total} tempo de acolhimento total em minutos')
+#
+#     # tempo_medio_de_espera_para_pacientes:
+#     print('-' * 90)
+#     df_aux = self.entidades.df_entidades.loc[((self.entidades.df_entidades.processo != "Ficha") | (
+#             self.entidades.df_entidades.processo != "Triagem"))]
+#
+#     df_tempo_fila_prioridade = df_aux.groupby(by=['prioridade_paciente']).agg(
+#         {"tempo_fila": "mean"}).reset_index()
+#     df_tempo_fila_prioridade['tempo_fila'] = round(df_tempo_fila_prioridade['tempo_fila'] / 60, 2)
+#     print(f'{df_tempo_fila_prioridade =}')
 
 
 def converte_segundos_em_dias(x):
@@ -59,9 +59,9 @@ class Gera_graficos():
         df_fila_media = pd.read_excel(self.path, sheet_name="df_fila_media")
         df_utilizacao_por_recurso = pd.read_excel(self.path, sheet_name="df_utilizacao_por_recurso")
         df_filas_por_prioridade = pd.read_excel(self.path, sheet_name="df_filas_por_prioridade")
-        df_estatisticas_bruto = pd.read_excel(self.path, sheet_name="df_estatisticas_bruto")
-        df_recursos = pd.read_excel(self.path, sheet_name="df_recursos")
-        df_entidades = pd.read_excel(self.path, sheet_name="df_entidades")
+        df_estatisticas_bruto = pd.read_csv("df_estatisticas_bruto.csv", sep=',')
+        df_recursos = pd.read_csv("df_recursos.csv",sep=',')
+        df_entidades = pd.read_csv("df_entidades.csv",sep=',')
         cenarios = list(pd.unique(df_total_pacientes.Cenario))
 
         graficos_de_todas_as_replicacoes_juntas = False

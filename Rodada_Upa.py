@@ -279,7 +279,7 @@ if __name__ == "__main__":
                                   ordem_processo=ordem_processo,
                                   atribuicoes=atribuicoes_processo,
                                   liberacao_recurso=liberacao_recursos,
-                                  warmup=50000,
+                                  warmup=0,
                                   )
 
     CorridaSimulacao_base = CorridaSimulacao(
@@ -467,7 +467,7 @@ if __name__ == "__main__":
 
     graficos_de_todas_as_replicacoes_juntas = False
     traduz = True
-    gera_graficos = True #Não consegui gerar gráficos devido a quantidade de dados e memória. Se o computador de quem está rodando aguentar, passar flag como true. Senão, passar como false, gerar os arquivos csv e rodar o  próximo script
+    gera_graficos = False #Não consegui gerar gráficos devido a quantidade de dados e memória. Se o computador de quem está rodando aguentar, passar flag como true. Senão, passar como false, gerar os arquivos csv e rodar o  próximo script
     if gera_graficos:
         if traduz:
             dicionario_traduzido_recursos = {
@@ -798,8 +798,8 @@ if __name__ == "__main__":
             df_fila_media.to_excel(writer, sheet_name="df_fila_media", index=False)
             df_utilizacao_por_recurso.to_excel(writer, sheet_name="df_utilizacao_por_recurso", index=False)
             df_filas_por_prioridade.to_excel(writer, sheet_name="df_filas_por_prioridade", index=False)
-            df_estatisticas_bruto.to_excel(writer, sheet_name="df_estatisticas_bruto", index=False)
-            df_recursos.to_excel(writer, sheet_name="df_recursos", index=False)
-            df_entidades.to_excel(writer, sheet_name="df_entidades", index=False)
+            df_estatisticas_bruto.to_csv("df_estatisticas_bruto.csv")
+            df_recursos.to_csv("df_recursos.csv")
+            df_entidades.to_csv("df_entidades.csv")
         writer.close()
 

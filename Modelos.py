@@ -736,8 +736,26 @@ class CorridaSimulacao():
             #if len(self.simulacoes) == 1:
                 #simulacao.confirma_fluxos()
             #simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
-            b=0
-
+            #calculo do warm-up para média do tempo em fila dos pacientes de prioridade 1
+            # CHART_THEME = 'plotly_white'
+            # pr = 1
+            # df_pr_1 = self.simulacoes[0].entidades.df_entidades
+            # #df = df_pr_1.loc[df_pr_1.prioridade == pr].reset_index()
+            # df = df_pr_1.loc[((df_pr_1.prioridade == pr) & (df_pr_1.processo == 'Clínico'))].reset_index()
+            # fig = px.line(df, x="entra_fila", y="tempo_fila",)
+            # fig.layout.template = CHART_THEME
+            # #fig.update_xaxes(title='Duração (D)', showgrid=False)
+            # #fig.update_yaxes(title='Utilização dos Recursos (%)')
+            # fig.update_layout(title_x=0.5)
+            # fig.show()
+            #
+            # df_2 = df.groupby(by=['entra_fila']).agg({'tempo_fila': 'mean'}).reset_index()
+            # fig = px.line(df_2, x="entra_fila", y="tempo_fila",)
+            # fig.layout.template = CHART_THEME
+            # #fig.update_xaxes(title='Duração (D)', showgrid=False)
+            # #fig.update_yaxes(title='Utilização dos Recursos (%)')
+            # fig.update_layout(title_x=0.5)
+            # fig.show()
 
         #if self.plota_graficos_finais:
             #self.plota_histogramas()
