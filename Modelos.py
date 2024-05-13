@@ -756,9 +756,14 @@ class CorridaSimulacao():
             # #fig.update_yaxes(title='Utilização dos Recursos (%)')
             # fig.update_layout(title_x=0.5)
             # fig.show()
+            #
+            # print(f'Média dos dados plotados: {np.mean(df_2.tempo_fila)}')
+            # fig = px.box(df, y="tempo_fila")
+            # fig.show()
 
-        #if self.plota_graficos_finais:
-            #self.plota_histogramas()
+
+        # if self.plota_graficos_finais:
+        #     self.plota_histogramas()
         #Passar para abstract que recebe o df e gera os histogramas, a principio apenas tempo de fila por prioridade e talvez por processo!
 
     def plota_histogramas(self):
@@ -833,22 +838,6 @@ class CorridaSimulacao():
         calcula_corridas = False
         estatisticas_v2 = True
 
-        # if calcula_corridas:
-        #     #Métrica: ocupação dos clinicos!
-        #     recurso = 'Clínico'
-        #     ocupacao_clinicos = list(df_recursos.loc[df_recursos.recurso == recurso]['utilizacao'])
-        #     media_ocupacao = np.mean(ocupacao_clinicos)
-        #     desvio = np.std(ocupacao_clinicos)
-        #     #t = 2.145 #14
-        #     #t = 2.56 #26
-        #     t = 2.009 #50
-        #     ic = [round(media_ocupacao - (t * desvio / math.sqrt(self.replicacoes)),4), round(media_ocupacao + (t * desvio / math.sqrt(self.replicacoes)),4)]
-        #
-        #     #calculo do h estimado
-        #     h = round((t * desvio / math.sqrt(self.replicacoes)),4)
-        #
-        #     precisao_desejada = 0.1
-        #     replicacoes_finais = np.ceil(self.replicacoes * (h/precisao_desejada)**2)
 
         if estatisticas_v2:
             #Calculo do Tempo no Sistema (TS), Tempo de Atendimento (TA) e Tempo em Fila (TF)
