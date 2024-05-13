@@ -74,7 +74,7 @@ class Simulacao():
         #release
         for rec in self.recursos_liberados_processo[processo]: #também deletar da entidade o requests e não buscar mais pelo request_recursos
             req_recurso_liberado = next(req_recurso for req_recurso in entidade_individual.lista_requests if rec == req_recurso.resource.nome)
-            self.recursos_est.fecha_ciclo(nome_recurso=rec,momento=self.env.now, inicio_utilizacao=req_recurso_liberado.usage_since, converte_dias = self.converte_dias)
+            self.recursos_est.fecha_ciclo(nome_recurso=rec,momento=self.env.now, inicio_utilizacao=req_recurso_liberado.usage_since, entidade=entidade_individual)
             self.recursos[rec].release(req_recurso_liberado)
             entidade_individual.lista_requests.remove(req_recurso_liberado) #Manter requests para serem removidos em outros métodos
 
@@ -104,7 +104,7 @@ class Simulacao():
             yield self.env.timeout(proximo_processo) #Aguarda tempo do resultado do exame!!!
             self.recursos_est.fecha_ciclo(nome_recurso='Default_Aguarda_Medicacao', momento=self.env.now,
                                           inicio_utilizacao=entidade_individual.entra_fila,
-                                          converte_dias=self.converte_dias)
+                                          entidade=entidade_individual)
             self.recursos['Default_Aguarda_Medicacao'].release(req)
             entidade_individual.atributos["prioridade_retorno"] = 3  #Pacientes com retorno tem maior prioridade - Verificar se saída dos outros exames está sendo setado!!!
             entidade_individual.atributos["retorno"] = True
@@ -599,18 +599,19 @@ class Entidades:
                 return processo_aux[0]
 
         tempo_sistema = list() #TODO:Loop está muito lento. Melhorar!
+        #Dados estão sendo calculados errados. Métricas de Tempo de sistema, tempo de fila e tempo de atendimento não precisam ser calculadas aqui!
         self.df_entidades = pd.DataFrame([est for ent in self.lista_entidades for est in ent.estatisticas])
         self.df_entidades = self.df_entidades.loc[self.df_entidades.entra_fila >= warmup]
         self.df_entidades['prioridade'] = self.df_entidades.apply(lambda x: retorna_prioridade(x.entidade, self.lista_entidades),axis=1 )
         self.df_entidades['recurso_do_processo'] = self.df_entidades.apply(lambda x: retorna_recurso_processo(x.processo, nec_recursos), axis=1)
 
-        dict_estatisticas_calculadas = {"tempo_sistema":np.mean([ent.saida_sistema - ent.entrada_sistema for ent in self.lista_entidades if ent.saida_sistema > 1]),
-        "tempo_processamento":round(np.mean(self.df_entidades['tempo_processando']),2),
-        "tempo_fila" :round(np.mean(self.df_entidades['tempo_fila']),2)}
-        printa_media(coluna='tempo_processando')
-        printa_media(coluna='tempo_fila')
-        print(f'TS: { dict_estatisticas_calculadas["tempo_sistema"] / 60} minutos')
-        self.resultados_entidades = pd.DataFrame([dict_estatisticas_calculadas])
+        # dict_estatisticas_calculadas = {"tempo_sistema":np.mean([ent.saida_sistema - ent.entrada_sistema for ent in self.lista_entidades if ent.saida_sistema > 1]),
+        # "tempo_processamento":round(np.mean(self.df_entidades['tempo_processando']),2),
+        # "tempo_fila" :round(np.mean(self.df_entidades['tempo_fila']),2)}
+        # printa_media(coluna='tempo_processando')
+        # printa_media(coluna='tempo_fila')
+        # print(f'TS: { dict_estatisticas_calculadas["tempo_sistema"] / 60} minutos')
+        #self.resultados_entidades = pd.DataFrame([dict_estatisticas_calculadas])
 
 class Entidade_individual(Entidades):
     def __new__(cls, *args, **kwargs):   #Usado para não relacionar um individuo com outro (substituindo o deepcopy)
@@ -669,24 +670,39 @@ class Recursos:
             rec_aux.utilizacao = 0
             rec_aux.estatisticas = []
             rec_aux.tempo_utilizacao_recurso = 0
+            rec_aux.lista_fila_acumulada = list()
+            rec_aux.tempo_fila_dinamico = 0
+            rec_aux.fila_acumulada_por_prioridade = {1:[], 2:[], 3:[], 4:[], 5:[], "sem_pr": []}
+            rec_aux.media_entidade_em_fila_acumulada = list()
+            rec_aux.media_entidade_em_atendimento_acumulado = list()
+
             #rec_aux.fecha_ciclo = fecha_ciclo
             recursos_dict[rec] = rec_aux
 
         return recursos_dict
 
-    def fecha_ciclo(self, nome_recurso, momento, inicio_utilizacao, converte_dias=1):
+    def fecha_ciclo(self, nome_recurso, momento, inicio_utilizacao, entidade):
         recurso = self.recursos[nome_recurso]
         recurso.tempo_utilizacao_recurso += round(momento - inicio_utilizacao)
-        #inicio_utilizacao = request.usage_since
-        #TODO: preciso usar o momento ou apenas o fecha_utilizacao_recurso ja tem esse dado, visto que será chamado após processo
+        tempo_fila_ent = entidade.sai_fila - entidade.entra_fila
+
+        recurso.lista_fila_acumulada.append(tempo_fila_ent/60)
+        recurso.tempo_fila_dinamico = np.mean(recurso.lista_fila_acumulada)/60
+        prioridade_entidade = entidade.atributos.get("prioridade","sem_pr")
+        recurso.fila_acumulada_por_prioridade[prioridade_entidade].append(tempo_fila_ent/60)  #valores acumulados estaticos
+        recurso.media_entidade_em_fila_acumulada.append(len(recurso.queue))
+        recurso.media_entidade_em_atendimento_acumulado.append(recurso.count)
+
         dict_aux = {"recurso": nome_recurso,
-                    "inicia_utilizacao_recurso": inicio_utilizacao,
-                    "finaliza_utilizacao_recurso": momento,
-                    "tempo_utilizacao_recurso": momento - inicio_utilizacao,
                     "utilizacao": recurso.tempo_utilizacao_recurso/(recurso._capacity * momento),
                     "T": momento/86400, #Dividido por esse valor para gerar gráficos por Dias!
                     "em_atendimento": recurso.count,
-                    "tamanho_fila": len(recurso.queue)
+                    "tamanho_fila": len(recurso.queue),
+                    "tempo_fila_acumulada": recurso.tempo_fila_dinamico,
+                    "prioridade_entidade": prioridade_entidade,
+                    "fila_acumulada_prioridade": np.mean(recurso.fila_acumulada_por_prioridade[prioridade_entidade]),
+                    "media_entidades_em_fila_acumulada" : np.mean(recurso.media_entidade_em_fila_acumulada),
+                    "media_entidades_em_atendimento_acumulado": np.mean(recurso.media_entidade_em_atendimento_acumulado)
                     }
 
         recurso.estatisticas.append(dict_aux)
@@ -694,23 +710,33 @@ class Recursos:
     def fecha_estatisticas(self,df_entidades, warmup=0 ):
         for nome, rec in self.recursos.items():
             df_aux = pd.DataFrame(rec.estatisticas)
-            try:
-                df_aux = df_aux.loc[df_aux['T'] * 86400 > warmup]
-                print("-"*90)
-                print(f'Utilizacao Média do recurso {nome}: {round(np.mean(df_aux["utilizacao"]),2)*100}%')
-                print(f'Média de entidades em fila no recurso Fila do recurso {nome}: {round(np.mean(df_aux["tamanho_fila"])) } entidades')
-                if nome == 'Técnica de Enfermagem' or nome == 'Espaço para tomar Medicação':
-                    tempo_fila_juntos = round(np.mean(df_entidades.loc[df_entidades.recurso_do_processo == 'Técnica de Enfermagem-Espaço para tomar Medicação']['tempo_fila'])/60,2)
-                    fila_separados = round(np.mean(df_entidades.loc[df_entidades.recurso_do_processo == nome]["tempo_fila"]) / 60, 2)
-                    if nome == 'Espaço para tomar Medicação':
-                        fila_separados = 0
-                    print(f'Media de tempo de fila do recurso {nome}: {tempo_fila_juntos + fila_separados} minutos')
+            df_aux = df_aux.loc[df_aux['T'] * 86400 > warmup]
+            print("-"*90)
+            print(f'Utilizacao Média do recurso {nome}: {round(np.mean(df_aux["utilizacao"]),2)*100}%') #Correto!!!
+            print(f'Média do Tamanho da fila recurso (Cálculo apenas salvando tamanho da fila) {nome}: {round(np.mean(df_aux["tamanho_fila"])) } entidades') #Corrigir entidades em fila do recurso, fazendo o mesmo calculo das médias
+            #print(f'Tempo Médio de Fila Acumulada Final (Ultimo registro): {round(rec.tempo_fila_dinamico,2)} minutos')
+            print(f'Tempo Médio de Fila Acumulada Médio (Média Geral de todas os registros): {round(np.mean(rec.lista_fila_acumulada), 2) } minutos')
+            for k, v in rec.fila_acumulada_por_prioridade.items():
+                if len(v) == 0:
+                    continue
                 else:
-                    print(f'Media de tempo de fila do recurso {nome}: {round(np.mean(df_entidades.loc[df_entidades.recurso_do_processo == nome]["tempo_fila"])/60,2)} minutos')
-                df_aux['recurso'] = nome
-                self.df_estatisticas_recursos = pd.concat([self.df_estatisticas_recursos, df_aux])
-            except:
-                continue
+                    media = round(np.mean(v),2)
+                    print(f'Prioridade: {k} - média de tempo em fila: {media} minutos')
+
+            print(f'Média de entidades em fila acumulada: {round(np.mean(rec.media_entidade_em_fila_acumulada),6)} entidades')
+            print(f'Média de entidades em atendimento acumulada: {round(np.mean(rec.media_entidade_em_atendimento_acumulado), 6)} entidades')
+
+            # if nome == 'Técnica de Enfermagem' or nome == 'Espaço para tomar Medicação':
+            #     tempo_fila_juntos = round(np.mean(df_entidades.loc[df_entidades.recurso_do_processo == 'Técnica de Enfermagem-Espaço para tomar Medicação']['tempo_fila'])/60,2)
+            #     fila_separados = round(np.mean(df_entidades.loc[df_entidades.recurso_do_processo == nome]["tempo_fila"]) / 60, 2)
+            #     if nome == 'Espaço para tomar Medicação':
+            #         fila_separados = 0
+            #     print(f'Media de tempo de fila do recurso {nome}: {tempo_fila_juntos + fila_separados} minutos')
+            # else:
+            #     print(f'Media de tempo de fila do recurso {nome}: {round(np.mean(df_entidades.loc[df_entidades.recurso_do_processo == nome]["tempo_fila"])/60,2)} minutos')
+            # df_aux['recurso'] = nome
+            self.df_estatisticas_recursos = pd.concat([self.df_estatisticas_recursos, df_aux])
+
         self.df_estatisticas_recursos = self.df_estatisticas_recursos.loc[self.df_estatisticas_recursos['T'] * 86400 > warmup] #multipliquei por 86400 para voltar converter o valor para segundos porque na hora de salvar os dados eu precisei salvar em minutos
 
 class CorridaSimulacao():
@@ -733,34 +759,22 @@ class CorridaSimulacao():
             simulacao.comeca_simulacao()
             simulacao.env.run(until=simulacao.tempo)
             simulacao.finaliza_todas_estatisticas()
+
             #if len(self.simulacoes) == 1:
                 #simulacao.confirma_fluxos()
             #simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
+
             #calculo do warm-up para média do tempo em fila dos pacientes de prioridade 1
             # CHART_THEME = 'plotly_white'
+            # df = self.simulacoes[0].recursos_est.df_estatisticas_recursos
             # pr = 1
-            # df_pr_1 = self.simulacoes[0].entidades.df_entidades
-            # #df = df_pr_1.loc[df_pr_1.prioridade == pr].reset_index()
-            # df = df_pr_1.loc[((df_pr_1.prioridade == pr) & (df_pr_1.processo == 'Clínico'))].reset_index()
-            # fig = px.line(df, x="entra_fila", y="tempo_fila",)
+            # df = df.loc[((df.prioridade_entidade == pr) & (df.recurso == "Clínico")) ]
+            # fig = px.line(df, x="T", y="fila_acumulada_prioridade",)
             # fig.layout.template = CHART_THEME
-            # #fig.update_xaxes(title='Duração (D)', showgrid=False)
-            # #fig.update_yaxes(title='Utilização dos Recursos (%)')
             # fig.update_layout(title_x=0.5)
-            # fig.show()
-            #
-            # df_2 = df.groupby(by=['entra_fila']).agg({'tempo_fila': 'mean'}).reset_index()
-            # fig = px.line(df_2, x="entra_fila", y="tempo_fila",)
-            # fig.layout.template = CHART_THEME
-            # #fig.update_xaxes(title='Duração (D)', showgrid=False)
-            # #fig.update_yaxes(title='Utilização dos Recursos (%)')
-            # fig.update_layout(title_x=0.5)
-            # fig.show()
-            #
-            # print(f'Média dos dados plotados: {np.mean(df_2.tempo_fila)}')
-            # fig = px.box(df, y="tempo_fila")
             # fig.show()
 
+            b=0
 
         # if self.plota_graficos_finais:
         #     self.plota_histogramas()
@@ -778,16 +792,6 @@ class CorridaSimulacao():
         fig = px.histogram(self.dados, x="tempo_fila", histnorm='probability density', color="prioridade",nbins=100 )
         #fig.show()
 
-
-        # for pr in pd.unique(self.dados.prioridade):
-        #     dados = self.dados.loc[((self.dados.prioridade == pr) & (self.dados.processo == 'clinico'))]['tempo_fila']
-        #     dados = dados / 60
-        #     plt.hist(dados, 20)
-        #     plt.axvline(np.mean(dados), color='k', linestyle='dashed', linewidth=2)
-        #     plt.title("Tempos de Espera para consulta")
-        #     plt.show()
-
-
         media_fim = self.dados.groupby(by=['prioridade', 'processo']).agg(
             {'tempo_fila': 'mean'}).reset_index()
         media_fim['tempo_fila'] = media_fim['tempo_fila'] / 60
@@ -799,6 +803,7 @@ class CorridaSimulacao():
             media_fim.loc[((media_fim.processo == 'triagem') | (media_fim.processo == "ficha"))]['tempo_fila'])
         print(f'{media_acolhimento = }')
         print(media_fim.loc[media_fim.processo == 'clinico'])
+
     def fecha_estatisticas_experimento(self):
         def calc_ic(lista):
             confidence = 0.95
@@ -865,15 +870,6 @@ class CorridaSimulacao():
                 media_WIP = np.mean(dados_WIP)
 
                 df_rec = self.df_estatisticas_recursos.loc[self.df_estatisticas_recursos.Replicacao == n_sim_ + 1]
-
-                #Calculando a média de individuos em fila e atendimento por recurso - ESTA MÉTRICA É A CORRETA. CALCULAR VALOR COM IC 95%
-                df_media = df_rec.groupby(by=['recurso']).agg({"em_atendimento": "mean", "tamanho_fila":"mean"}).reset_index()
-                soma_em_att = sum(df_media.em_atendimento)
-                soma_em_fila = sum(df_media.tamanho_fila)
-
-                media_em_att = np.mean(df_media.em_atendimento)
-                media_em_fila = np.mean(df_media.tamanho_fila)
-
 
 
                 ####### RECURSOS #####

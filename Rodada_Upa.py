@@ -283,15 +283,16 @@ if __name__ == "__main__":
                                   )
 
     CorridaSimulacao_base = CorridaSimulacao(
-            replicacoes=30,
+            replicacoes=2,
             simulacao=simulacao_base,
             duracao_simulacao=tempo,
-            periodo_warmup=50000,
+            periodo_warmup=0,
             plota_histogramas=True
         )
 
-    #CorridaSimulacao_base.roda_simulacao()
-    #CorridaSimulacao_base.fecha_estatisticas_experimento()
+    CorridaSimulacao_base.roda_simulacao()
+    CorridaSimulacao_base.fecha_estatisticas_experimento()
+
     #CorridaSimulacao_base.fecha_estatisticas_experimento()
     # CorridaSimulacao_base.df_estatisticas_entidades.to_excel("df_entidades.xlsx")
     # CorridaSimulacao_base.df_estatisticas_recursos.to_excel("df_recursos.xlsx")
