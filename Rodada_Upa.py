@@ -260,14 +260,14 @@ if __name__ == "__main__":
                                   )
 
     CorridaSimulacao_base = CorridaSimulacao(
-            replicacoes=5,
+            replicacoes=1,
             simulacao=simulacao_base,
             duracao_simulacao=tempo,
             periodo_warmup=0,
             plota_histogramas=True
         )
 
-    # CorridaSimulacao_base.roda_simulacao()
+    CorridaSimulacao_base.roda_simulacao()
     # CorridaSimulacao_base.fecha_estatisticas_experimento()
 
     #CorridaSimulacao_base.fecha_estatisticas_experimento()
@@ -457,8 +457,6 @@ if __name__ == "__main__":
                 "saida": "Exit",
                 "Aguarda Resultado de Exame": "Waiting Examination Results"
             }
-
-            b=0
 
             CHART_THEME = 'plotly_white'
 

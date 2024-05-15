@@ -162,6 +162,21 @@ class Simulacao():
         self.estatisticas_sistema.fecha_estatisticas(warmup=self.warmup)
         self.resultados_da_replicacao = self.calcula_estatisticas_da_replicacao()
         #limpa todos os dados para não pesar a classe
+        gera_warm_up = False
+        if gera_warm_up:
+            CHART_THEME = 'plotly_white'
+            df = self.recursos_est.df_estatisticas_recursos
+            pr = 1
+            df = df.loc[((df.prioridade_entidade == pr) & (df.recurso == "Clínico"))]
+            fig = px.line(df, x="T", y="fila_acumulada_prioridade",
+                          title="Warm-up time for priority 1 patient care at the clinic")
+            fig.layout.template = CHART_THEME
+            fig.update_layout(title_x=0.5)
+            fig.update_xaxes(title='Duration (D)', showgrid=False)
+            fig.update_yaxes(title='Queue Average (Min)')
+            fig.show()
+            b = 0
+        b = 0
         self.limpa_dados()
 
     def gera_graficos(self,n, plota):
@@ -847,15 +862,19 @@ class CorridaSimulacao():
             #simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
 
             #calculo do warm-up para média do tempo em fila dos pacientes de prioridade 1
-            # CHART_THEME = 'plotly_white'
-            # df = self.simulacoes[0].recursos_est.df_estatisticas_recursos
-            # pr = 1
-            # df = df.loc[((df.prioridade_entidade == pr) & (df.recurso == "Clínico")) ]
-            # fig = px.line(df, x="T", y="fila_acumulada_prioridade",)
-            # fig.layout.template = CHART_THEME
-            # fig.update_layout(title_x=0.5)
-            # fig.show()
-
+            gera_warm_up = True
+            if gera_warm_up:
+                CHART_THEME = 'plotly_white'
+                df = self.simulacoes[0].recursos_est.df_estatisticas_recursos
+                pr = 1
+                df = df.loc[((df.prioridade_entidade == pr) & (df.recurso == "Clínico")) ]
+                fig = px.line(df, x="T", y="fila_acumulada_prioridade", title= "Warm-up time for priority 1 patient care at the clinic")
+                fig.layout.template = CHART_THEME
+                fig.update_layout(title_x=0.5)
+                fig.update_xaxes(title='Duration (D)', showgrid=False)
+                fig.update_yaxes(title='Queue Average (Min)')
+                fig.show()
+                b=0
             b=0
 
         # if self.plota_graficos_finais:
