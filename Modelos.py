@@ -157,12 +157,12 @@ class Simulacao():
 
     def finaliza_todas_estatisticas(self):
         #Agrupa os dados
-        self.entidades.fecha_estatisticas(warmup=self.warmup, nec_recursos = self.necessidade_recursos)
+        self.entidades.fecha_estatisticas(warmup=self.warmup, nec_recursos = self.necessidade_recursos) #TODO: Acelerar a busca pela prioridade das entidades!!!
         self.recursos_est.fecha_estatisticas(warmup=self.warmup, df_entidades=self.entidades.df_entidades)
         self.estatisticas_sistema.fecha_estatisticas(warmup=self.warmup)
         self.resultados_da_replicacao = self.calcula_estatisticas_da_replicacao()
         #limpa todos os dados para não pesar a classe
-        gera_warm_up = False
+        gera_warm_up = True
         if gera_warm_up:
             CHART_THEME = 'plotly_white'
             df = self.recursos_est.df_estatisticas_recursos
@@ -780,7 +780,7 @@ class Recursos:
         tempo_fila_ent = entidade.sai_fila - entidade.entra_fila
 
         recurso.lista_fila_acumulada.append(tempo_fila_ent/60)
-        recurso.tempo_fila_dinamico = np.mean(recurso.lista_fila_acumulada)/60
+        recurso.tempo_fila_dinamico = np.mean(recurso.lista_fila_acumulada)
         prioridade_entidade = entidade.atributos.get("prioridade","sem_pr")
         recurso.fila_acumulada_por_prioridade[prioridade_entidade].append(tempo_fila_ent/60)  #valores acumulados estaticos
         recurso.media_entidade_em_fila_acumulada.append(len(recurso.queue))
@@ -862,20 +862,7 @@ class CorridaSimulacao():
             #simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
 
             #calculo do warm-up para média do tempo em fila dos pacientes de prioridade 1
-            gera_warm_up = True
-            if gera_warm_up:
-                CHART_THEME = 'plotly_white'
-                df = self.simulacoes[0].recursos_est.df_estatisticas_recursos
-                pr = 1
-                df = df.loc[((df.prioridade_entidade == pr) & (df.recurso == "Clínico")) ]
-                fig = px.line(df, x="T", y="fila_acumulada_prioridade", title= "Warm-up time for priority 1 patient care at the clinic")
-                fig.layout.template = CHART_THEME
-                fig.update_layout(title_x=0.5)
-                fig.update_xaxes(title='Duration (D)', showgrid=False)
-                fig.update_yaxes(title='Queue Average (Min)')
-                fig.show()
-                b=0
-            b=0
+
 
         # if self.plota_graficos_finais:
         #     self.plota_histogramas()

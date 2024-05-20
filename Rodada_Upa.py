@@ -78,7 +78,7 @@ if __name__ == "__main__":
         "Raio-x": ["decisao_apos_raio_x"],
         "Eletro": ["decisao_apos_eletro"]
     }
-    tempo = 24 * 60 * 60 * 30
+    tempo = 24 * 60 * 60 * 30 * 1
     necessidade_recursos = {"Ficha": ["Secretária"],
                             "Triagem": ["Enfermeira de Triagem"],
                             "Clínico": ["Clínico"],
@@ -209,7 +209,7 @@ if __name__ == "__main__":
 
     distribuicoes_probabilidade = calcula_distribuicoes_prob()
 
-    warmup = 50000
+    warmup = 5 * 86400
     replicacoes = 30
     #seed(1000)
     recursos_base = {"Secretária": [2, False],
@@ -268,17 +268,7 @@ if __name__ == "__main__":
         )
 
     CorridaSimulacao_base.roda_simulacao()
-    # CorridaSimulacao_base.fecha_estatisticas_experimento()
-
-    #CorridaSimulacao_base.fecha_estatisticas_experimento()
-    # CorridaSimulacao_base.df_estatisticas_entidades.to_excel("df_entidades.xlsx")
-    # CorridaSimulacao_base.df_estatisticas_recursos.to_excel("df_recursos.xlsx")
-    # CorridaSimulacao_base.df_estatistcas_sistemas_brutos.to_excel("df_WIP.xlsx")
-    # TS = [(ent.saida_sistema - ent.entrada_sistema) / 60 for sim in CorridaSimulacao_base.simulacoes for ent in
-    #               sim.entidades.lista_entidades if ent.saida_sistema > 1]
-    # print(f'Media: {round(np.mean(TS),2)}, Mediana {round(np.median(TS),2)}, Moda {round(statistics.mode(TS),2)}')
-
-    #Unicos pontos que iremos alterar a principio na geração de cenários será os recursos e tempos de processo!
+    CorridaSimulacao_base.fecha_estatisticas_experimento()
 
     def distribuicoes_cen4(processo, slot="None"):
         coef_processos = 60  # Conversão para minutos!!
@@ -387,7 +377,7 @@ if __name__ == "__main__":
 
 
         CorridaSimulacao_cenario = CorridaSimulacao(
-            replicacoes= 30,
+            replicacoes= 8,
             simulacao=simulacao_cenario,
             duracao_simulacao=tempo,
             periodo_warmup=warmup,
@@ -630,5 +620,5 @@ if __name__ == "__main__":
             fig.update_layout(title_x=0.5)
             fig.show()
 
-
+            b=0
 
