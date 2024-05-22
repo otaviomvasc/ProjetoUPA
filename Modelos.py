@@ -160,9 +160,9 @@ class Simulacao():
         self.entidades.fecha_estatisticas(warmup=self.warmup, nec_recursos = self.necessidade_recursos) #TODO: Acelerar a busca pela prioridade das entidades!!!
         self.recursos_est.fecha_estatisticas(warmup=self.warmup, df_entidades=self.entidades.df_entidades)
         self.estatisticas_sistema.fecha_estatisticas(warmup=self.warmup)
-        self.resultados_da_replicacao = self.calcula_estatisticas_da_replicacao()
+        self.resultados_da_replicacao, dados_planilha = self.calcula_estatisticas_da_replicacao()
         #limpa todos os dados para não pesar a classe
-        gera_warm_up = True
+        gera_warm_up = False
         if gera_warm_up:
             CHART_THEME = 'plotly_white'
             df = self.recursos_est.df_estatisticas_recursos
@@ -176,9 +176,8 @@ class Simulacao():
             fig.update_yaxes(title='Queue Average (Min)')
             fig.show()
             b = 0
-        b = 0
         self.limpa_dados()
-
+        return dados_planilha
     def gera_graficos(self,n, plota):
         #Graficos de WIP, entrada e saída
         def retorna_prioridade(paciente, lista_entidades):
@@ -503,6 +502,14 @@ class Simulacao():
         b=0
 
     def calcula_estatisticas_da_replicacao(self):
+        def calc_ic(lista):
+            confidence = 0.95
+            n = len(lista)
+            # mean_se: Erro Padrão da Média
+            mean_se = stats.sem(lista)
+            h = mean_se * stats.t.ppf((1 + confidence) / 2., n - 1)
+            # Intervalo de confiança: mean, +_h
+            return h
 
         entidades_que_sairam_do_sistema = [ent.nome for ent in self.entidades.lista_entidades if
                                            ent.saida_sistema > 1]
@@ -536,16 +543,12 @@ class Simulacao():
         dict_rec = dict()
         for rc in rec_avaliados:
             dict_rec[rc] = {"dados_utilizacao": list(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']),
-                            "media": np.mean(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']),
+                            "media_utilizacao": np.mean(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']),
                             "tempo_fila": list(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
-                            'prioridade_entidade': list(
-                                df_rec_rep.loc[df_rec_rep.recurso == rc]['prioridade_entidade']),
-                            'tempo_fila_prioridade_entidade': list(
-                                df_rec_rep.loc[df_rec_rep.recurso == rc]['fila_acumulada_prioridade']),
+                            'prioridade_entidade': list(df_rec_rep.loc[df_rec_rep.recurso == rc]['prioridade_entidade']),
+                            'tempo_fila_prioridade_entidade': list(df_rec_rep.loc[df_rec_rep.recurso == rc]['fila_acumulada_prioridade']),
                             'discretizacao': list(df_rec_rep.loc[df_rec_rep.recurso == rc]['T']),
-                            'media_tempo_fila_pr1_clinico': np.mean(df_rec_rep.loc[(
-                                        (df_rec_rep.recurso == 'Clínico') & (df_rec_rep.prioridade_entidade == 1))][
-                                                                        'fila_acumulada_prioridade']),
+                            'media_tempo_fila_pr1_clinico': np.mean(df_rec_rep.loc[((df_rec_rep.recurso == 'Clínico') & (df_rec_rep.prioridade_entidade == 1))]['fila_acumulada_prioridade']),
                             "processo": list(df_rec_rep.loc[df_rec_rep.recurso == rc]['processo']),
                             "tempo_fila_entidades": list(df_rec_rep.loc[df_rec_rep.recurso == rc]['Fila_Entidades'])
                             }
@@ -568,7 +571,98 @@ class Simulacao():
                   "media_NA_final": media_NA_final,
                   }
 
-        return dt_aux
+        dict_rec2 = dict()
+        prs = [1,2,3,4,5,"sem_pr"]
+
+        for rc in rec_avaliados:
+            dict_pr = dict()
+            # for pr in prs:
+            #     #Filas!
+            #     dados = df_rec_rep.loc[((df_rec_rep.recurso == rc) & (df_rec_rep.prioridade_entidade == pr))]['fila_acumulada_prioridade']
+            #     if len(dados) == 0:
+            #         #fila
+            #         dict_fila_pr = 0
+            #         dict_desv_pad = np.std(0)
+            #         dict_IC = 0
+            #         dict_min = 0
+            #         dict_max = 0
+            #         dict_len = 0
+            #
+            #     else:
+            #         #Fila
+            #         dict_fila_pr = np.mean(dados)
+            #         dict_desv_pad = np.std(dados)
+            #         dict_IC = calc_ic(dados)
+            #         dict_min = min(dados)
+            #         dict_max = max(dados)
+            #         dict_len = len(dados)
+            #
+            #     # Tempo atendimento
+            #     dados2 = df_rec_rep.loc[((df_rec_rep.recurso == rc) & (df_rec_rep.prioridade_entidade == pr))]['tempo_processo_por_prioridade']
+            #     if len(dados2) == 0:
+            #         at_pr = 0
+            #         desv_pad_at = 0
+            #         ic = 0
+            #         min_at = 0
+            #         max_at = 0
+            #         len_at = 0
+            #     else:
+            #         at_pr = np.mean(dados2)
+            #         desv_pad_at = np.std(dados2)
+            #         ic = calc_ic(dados2)
+            #         min_at = min(dados2)
+            #         max_at = max(dados2)
+            #         len_at = len(dados2)
+            #
+            #     dict_pr[pr] = {"dados_fila": dados, "dados_atendimento": dados2}
+
+            dados = df_rec_rep.loc[(df_rec_rep.recurso == rc)]['fila_acumulada_prioridade']
+            dados2 = df_rec_rep.loc[(df_rec_rep.recurso == rc)]['tempo_processo_por_prioridade']
+            dict_rec2[rc] = {
+                            "dados_utilizacao": df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao'],
+                            "dados_fila" : dados,
+                            "dados_atendimento": dados2,
+                            "dados_entidade_em_fila": df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']
+
+                            # "desvio_pad_utilizacao": np.std(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']),
+                            # "IC_utilizacao": calc_ic(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']),
+                            # "max_utilizacao": max(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']),
+                            # "min_utilizacao": min(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']),
+                            # "media_fila_todas_prioridades": np.mean(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
+                            # "desvio_padrao_fila_todas_prioridades": np.std(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
+                            # "IC_fila_todas_prioridades": calc_ic(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
+                            # "Min_fila_todas_prioridades": min(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
+                            # "Max_fila_todas_prioridades": max(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
+                            # "Numero_registros_fila_todas_prioridades" : len(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
+                            # "tempo_atendimento_todas_prioridades": np.mean(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
+                            # "desvio_padrao_atendimento_todas_prioridades": np.std(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
+                            # "IC_atendimento_todas_prioridades": calc_ic(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
+                            # "Min_atendimento_todas_prioridades": min(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
+                            # "Max_atendimento_todas_prioridades": max(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
+                            # "Numero_registros_todas_prioridades": len(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
+                            # "Dados_por_prioridade": dict_pr,
+                            # 'media_tempo_fila_pr1_clinico': np.mean(df_rec_rep.loc[((df_rec_rep.recurso == 'Clínico') & (df_rec_rep.prioridade_entidade == 1))]['fila_acumulada_prioridade']),
+                            # "processo": list(df_rec_rep.loc[df_rec_rep.recurso == rc]['processo'])[0],
+                            # "numer_registros": len(list(df_rec_rep.loc[df_rec_rep.recurso == rc]['processo'])),
+                            # "media_entidades_em_fila": np.mean(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']),
+                            # "desvio_entidades_em_fila": np.std(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']),
+                            # "IC_entidades_em_fila": calc_ic(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']),
+                            # "min_entidades_em_fila": min(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']),
+                            # "max_entidades_em_fila": max(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']),
+                            # "media_entidades_em_atendimento": np.mean(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_atendimento_acumulado']),
+                            # "desvio_entidades_em_atendimento": np.std(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_atendimento_acumulado']),
+                            # "IC_entidades_em_atendimento": calc_ic(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_atendimento_acumulado']),
+                            # "min_entidades_em_atendimento": min(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_atendimento_acumulado']),
+                            # "max_entidades_em_atendimento": max(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_atendimento_acumulado']),
+                            }
+
+
+        dados_planilha = {"dados_tempo": dict_rec2, "media_tempo_sistema_total": np.mean(aux_TS), "min_TS": min(aux_TS), "max_TS": max(aux_TS) , "desv_pad_TS": np.std(aux_TS), "IC_TS": calc_ic(aux_TS), "amostra_TS" : len(aux_TS),
+                          "media_WIP": np.mean(dados_WIP), "min_WIP": min(dados_WIP), "max_wip": max(dados_WIP), "desv_pad_WIP": np.std(dados_WIP), "IC_wip": calc_ic(dados_WIP),
+                          "Dados_TA": [i / 60 for i in list(df_soma_tempos_por_entidade.tempo_processando)], "Dados_Fila":[i/60 for i in  list(df_soma_tempos_por_entidade.tempo_fila)] }
+
+
+        return dt_aux, dados_planilha
 
     def limpa_dados(self):
         self.entidades = []
@@ -768,6 +862,12 @@ class Recursos:
             rec_aux.fila_acumulada_por_prioridade = {1:[], 2:[], 3:[], 4:[], 5:[], "sem_pr": []}
             rec_aux.media_entidade_em_fila_acumulada = list()
             rec_aux.media_entidade_em_atendimento_acumulado = list()
+            rec_aux.tempo_atendimento_entidade_geral = 0,
+            rec_aux.lista_tempo_atendimento_geral = list()
+            rec_aux.tempo_atendimento_por_prioridade = {1:[], 2:[], 3:[], 4:[], 5:[], "sem_pr": []}
+            rec_aux.tempo_de_espera_do_recurso = 0.
+            rec_aux.lista_tempo_espera_do_recurso = 0
+
 
             #rec_aux.fecha_ciclo = fecha_ciclo
             recursos_dict[rec] = rec_aux
@@ -777,12 +877,16 @@ class Recursos:
     def fecha_ciclo(self, nome_recurso, momento, inicio_utilizacao, entidade, processo):
         recurso = self.recursos[nome_recurso]
         recurso.tempo_utilizacao_recurso += round(momento - inicio_utilizacao)
+        tempo_atendimento = momento - entidade.entra_processo
         tempo_fila_ent = entidade.sai_fila - entidade.entra_fila
-
         recurso.lista_fila_acumulada.append(tempo_fila_ent/60)
+        recurso.lista_tempo_atendimento_geral.append(tempo_atendimento/60)
+        recurso.tempo_atendimento_entidade_geral = np.mean(recurso.lista_tempo_atendimento_geral)
+
         recurso.tempo_fila_dinamico = np.mean(recurso.lista_fila_acumulada)
-        prioridade_entidade = entidade.atributos.get("prioridade","sem_pr")
+        prioridade_entidade = entidade.atributos.get("prioridade","sem_pr") #Definição de qual entidade, dado que cada prioridade é uma entidade?
         recurso.fila_acumulada_por_prioridade[prioridade_entidade].append(tempo_fila_ent/60)  #valores acumulados estaticos
+        recurso.tempo_atendimento_por_prioridade[prioridade_entidade].append(tempo_atendimento/60)
         recurso.media_entidade_em_fila_acumulada.append(len(recurso.queue))
         recurso.media_entidade_em_atendimento_acumulado.append(recurso.count)
 
@@ -792,9 +896,11 @@ class Recursos:
                     "T": momento/86400, #Dividido por esse valor para gerar gráficos por Dias!
                     "em_atendimento": recurso.count,
                     "tamanho_fila": len(recurso.queue),
-                    "tempo_fila_acumulada": recurso.tempo_fila_dinamico,
-                    "prioridade_entidade": prioridade_entidade,
-                    "fila_acumulada_prioridade": np.mean(recurso.fila_acumulada_por_prioridade[prioridade_entidade]),
+                    "tempo_fila_acumulada": recurso.tempo_fila_dinamico,#Média geral - Que será usada para cálculo final caso tenhamos uma mesma entidade!
+                    "tempo_processo_acumulado": recurso.tempo_atendimento_entidade_geral,
+                    "tempo_processo_por_prioridade": np.mean(recurso.tempo_atendimento_por_prioridade[prioridade_entidade]),
+                    "prioridade_entidade": prioridade_entidade, #Média do tempo em fila da prioriade!
+                    "fila_acumulada_prioridade": np.mean(recurso.fila_acumulada_por_prioridade[prioridade_entidade]), #Média dos tempos em filas acumulados por entidade!
                     "media_entidades_em_fila_acumulada" : np.mean(recurso.media_entidade_em_fila_acumulada),
                     "media_entidades_em_atendimento_acumulado": np.mean(recurso.media_entidade_em_atendimento_acumulado)
                     }
@@ -848,25 +954,22 @@ class CorridaSimulacao():
         self.periodo_warmup = periodo_warmup #TODO: Tirar do código
         self.dados = pd.DataFrame()
         self.plota_graficos_finais = plota_histogramas
-    def roda_simulacao(self):
+        self.dados_planilha = dict()
+    def roda_simulacao(self, gera_planilha=False):
         for n_sim in range(len(self.simulacoes)):
             print(f'Simulação {n_sim + 1}')
             print('-' * 150)
             simulacao = self.simulacoes[n_sim]
             simulacao.comeca_simulacao()
             simulacao.env.run(until=simulacao.tempo)
-            simulacao.finaliza_todas_estatisticas()
+            dados_p = simulacao.finaliza_todas_estatisticas()
+            self.dados_planilha[n_sim] = dados_p
 
             #if len(self.simulacoes) == 1:
                 #simulacao.confirma_fluxos()
             #simulacao.gera_graficos(n_sim, self.plota_graficos_finais)
 
             #calculo do warm-up para média do tempo em fila dos pacientes de prioridade 1
-
-
-        # if self.plota_graficos_finais:
-        #     self.plota_histogramas()
-        #Passar para abstract que recebe o df e gera os histogramas, a principio apenas tempo de fila por prioridade e talvez por processo!
 
     def plota_histogramas(self):
 
@@ -941,7 +1044,7 @@ class CorridaSimulacao():
             rec_avaliados = [r for r in tempos_sistema_por_replicacao[0]['dict_utilizacao'].keys() if r != 'Default_Aguarda_Medicacao']
             list_utilizacao_medias = list()
             for r in rec_avaliados:
-                medias = [v["dict_utilizacao"][r]['media'] for v in tempos_sistema_por_replicacao.values()]
+                medias = [v["dict_utilizacao"][r]['media_utilizacao'] for v in tempos_sistema_por_replicacao.values()]
                 dados = [i for v in tempos_sistema_por_replicacao.values() for i in v["dict_utilizacao"][r]['dados_utilizacao']]
                 print('Media Utilização do recurso {0}: {1:.2f}% \u00B1 {2:.2f} % (IC 95%)'.format( r, np.round(np.mean(medias)*100,2), calc_ic(dados)))
                 list_utilizacao_medias.append({"recurso": r, "utilizacao": np.mean(medias)*100 })

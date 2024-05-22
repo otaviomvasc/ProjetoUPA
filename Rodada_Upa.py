@@ -61,6 +61,91 @@ def converte_segundos_em_meses(x):
     return x / (86400 * 30)
 
 
+def calc_ic(lista):
+    confidence = 0.95
+    n = len(lista)
+    # mean_se: Erro Padrão da Média
+    mean_se = stats.sem(lista)
+    h = mean_se * stats.t.ppf((1 + confidence) / 2., n - 1)
+    # Intervalo de confiança: mean, +_h
+    return h
+
+def cria_planilha(CorridaSimulacao_base, path= ""):
+    prs = [1, 2, 3, 4, 5, "sem_pr"]
+    recursos = [r for r in CorridaSimulacao_base.dados_planilha[0]['dados_tempo']]
+    aba_1 = list()
+    aba_2 = list()
+    for run in CorridaSimulacao_base.dados_planilha:
+        for rec in CorridaSimulacao_base.dados_planilha[run]['dados_tempo']:
+            dc_rec = {"Replicacao": run, "Name": rec + ".Queue", "Type": "Waiting Time", "Source": "Queue",
+                  "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
+                  "BatchMeansHalfWidth": calc_ic(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
+                  "StDev": np.std(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
+                  "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
+                  "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
+                  "NumberObservations":len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']),
+                  }
+            aba_1.append(dc_rec)
+
+            # TODO: Isso precisa ser o nome do processo!
+            dc_number_waiting = {"Replicacao": run, "Name": rec + ".Queue", "Type": "Number Waiting", "Source": "Queue",
+                             "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila']),
+                             "BatchMeansHalfWidth":calc_ic(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila']),
+                             "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila']),
+                             "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila'])}
+
+            aba_2.append(dc_number_waiting)
+
+            dc_utilizacao = {"Replicacao": run, "Name": rec , "Type": "Instantaneous Utilization", "Source": "Resource",
+                             "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao']),
+                             "BatchMeansHalfWidth":calc_ic(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao']),
+                             "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao']),
+                             "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao'])}
+            aba_2.append(dc_utilizacao)
+
+        dc_wip = {"Replicacao": run, "Name": "Pacientes", "Type": "WIP", "Source": "Entity",
+                         "Average": CorridaSimulacao_base.dados_planilha[run]['media_WIP'],
+                         "BatchMeansHalfWidth": CorridaSimulacao_base.dados_planilha[run]['IC_TS'],
+                         "Minimum": CorridaSimulacao_base.dados_planilha[run]['min_WIP'],
+                         "Maximum": CorridaSimulacao_base.dados_planilha[run]['max_wip'],}
+
+        aba_2.append(dc_wip)
+
+        dc_entity_Total_Time_global = {"Replicacao": run, "Name": "Paciente", "Type": "Total Time", "Source": "Entity", "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['media_tempo_sistema_total']),
+                     "BatchMeansHalfWidth": CorridaSimulacao_base.dados_planilha[run]['IC_TS'],
+                     "StDev": CorridaSimulacao_base.dados_planilha[run]['desv_pad_TS'],
+                     "Minimum":  CorridaSimulacao_base.dados_planilha[run]['min_TS'],
+                     "Maximum":  CorridaSimulacao_base.dados_planilha[run]['max_TS'],
+                     "NumberObservations": CorridaSimulacao_base.dados_planilha[run]['amostra_TS']
+                                       } #TODO: Pegar num_observations!!!!
+        aba_1.append(dc_entity_Total_Time_global)
+        #TODO: Gerar dados globais!
+        dc_entity_VA_Time_global = {"Replicacao": run, "Name": "Paciente", "Type": "VA Time", "Source": "Entity", "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']), #soma das médias os recursos!
+                     "BatchMeansHalfWidth": calc_ic(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
+                     "StDev": np.std(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
+                     "Minimum":  min(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
+                     "Maximum":  max(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
+                     "NumberObservations": len(CorridaSimulacao_base.dados_planilha[run]['Dados_TA'])}
+
+        aba_1.append(dc_entity_VA_Time_global)
+        #TODO: Gerar dados globais!
+        dc_entity_Waiting_Time_global = {"Replicacao": run, "Name": "Paciente", "Type": "Wait Time", "Source": "Entity", "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),  # soma das médias os recursos!
+                                    "BatchMeansHalfWidth": calc_ic(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
+                                    "StDev": np.std(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
+                                    "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
+                                    "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
+                                    "NumberObservations": len(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila'])}
+
+        aba_1.append(dc_entity_Waiting_Time_global)
+
+    df_aba_1 = pd.DataFrame(aba_1)
+    df_aba_2 = pd.DataFrame(aba_2)
+    nome_arquivo = 'RESULTADOS_FINAIS' + " - " + path + ".xlsx"
+    with pd.ExcelWriter(nome_arquivo) as writer:
+        df_aba_1.to_excel(writer, sheet_name='DiscreteTimeStatsByRep')
+        df_aba_2.to_excel(writer, sheet_name='ContinuousTimeStatsByRep')
+
+
 if __name__ == "__main__":
 
     #Dados e parâmetros default em todos os cenários:
@@ -260,15 +345,89 @@ if __name__ == "__main__":
                                   )
 
     CorridaSimulacao_base = CorridaSimulacao(
-            replicacoes=1,
+            replicacoes=2,
             simulacao=simulacao_base,
             duracao_simulacao=tempo,
             periodo_warmup=0,
             plota_histogramas=True
         )
-
-    CorridaSimulacao_base.roda_simulacao()
-    CorridaSimulacao_base.fecha_estatisticas_experimento()
+    #
+    # CorridaSimulacao_base.roda_simulacao()
+    # CorridaSimulacao_base.fecha_estatisticas_experimento()
+    #Aba 1
+    # Por recurso:
+    # def cria_planilha(CorridaSimulacao_base):
+    #     prs = [1, 2, 3, 4, 5, "sem_pr"]
+    #     recursos = [r for r in CorridaSimulacao_base.dados_planilha[0]['dados_tempo']]
+    #     aba_1 = list()
+    #     aba_2 = list()
+    #     for run in CorridaSimulacao_base.dados_planilha:
+    #         for rec in CorridaSimulacao_base.dados_planilha[run]['dados_tempo']:
+    #             dc_rec = {"Replicacao": run, "Name": rec + ".Queue", "Type": "Waiting Time", "Source": "Queue",
+    #                   "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
+    #                   "BatchMeansHalfWidth": calc_ic(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
+    #                   "StDev": np.std(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
+    #                   "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
+    #                   "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
+    #                   "NumberObservations":len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']),
+    #                   }
+    #             aba_1.append(dc_rec)
+    #
+    #             # TODO: Isso precisa ser o nome do processo!
+    #             dc_number_waiting = {"Replicacao": run, "Name": rec + ".Queue", "Type": "Number Waiting", "Source": "Queue",
+    #                              "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila']),
+    #                              "BatchMeansHalfWidth":calc_ic(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila']),
+    #                              "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila']),
+    #                              "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila'])}
+    #
+    #             aba_2.append(dc_number_waiting)
+    #
+    #             dc_utilizacao = {"Replicacao": run, "Name": rec , "Type": "Instantaneous Utilization", "Source": "Resource",
+    #                              "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao']),
+    #                              "BatchMeansHalfWidth":calc_ic(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao']),
+    #                              "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao']),
+    #                              "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao'])}
+    #             aba_2.append(dc_utilizacao)
+    #
+    #         dc_wip = {"Replicacao": run, "Name": "Pacientes", "Type": "WIP", "Source": "Entity",
+    #                          "Average": CorridaSimulacao_base.dados_planilha[run]['media_WIP'],
+    #                          "BatchMeansHalfWidth": CorridaSimulacao_base.dados_planilha[run]['IC_TS'],
+    #                          "Minimum": CorridaSimulacao_base.dados_planilha[run]['min_WIP'],
+    #                          "Maximum": CorridaSimulacao_base.dados_planilha[run]['max_wip'],}
+    #
+    #         aba_2.append(dc_wip)
+    #
+    #         dc_entity_Total_Time_global = {"Replicacao": run, "Name": "Paciente", "Type": "Total Time", "Source": "Entity", "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['media_tempo_sistema_total']),
+    #                      "BatchMeansHalfWidth": CorridaSimulacao_base.dados_planilha[run]['IC_TS'],
+    #                      "StDev": CorridaSimulacao_base.dados_planilha[run]['desv_pad_TS'],
+    #                      "Minimum":  CorridaSimulacao_base.dados_planilha[run]['min_TS'],
+    #                      "Maximum":  CorridaSimulacao_base.dados_planilha[run]['max_TS'],
+    #                      "NumberObservations": CorridaSimulacao_base.dados_planilha[run]} #TODO: Pegar num_observations!!!!
+    #         aba_1.append(dc_entity_Total_Time_global)
+    #         #TODO: Gerar dados globais!
+    #         dc_entity_VA_Time_global = {"Replicacao": run, "Name": "Paciente", "Type": "VA Time", "Source": "Entity", "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']), #soma das médias os recursos!
+    #                      "BatchMeansHalfWidth": calc_ic(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
+    #                      "StDev": np.std(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
+    #                      "Minimum":  min(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
+    #                      "Maximum":  max(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
+    #                      "NumberObservations": len(CorridaSimulacao_base.dados_planilha[run]['Dados_TA'])}
+    #
+    #         aba_1.append(dc_entity_VA_Time_global)
+    #         #TODO: Gerar dados globais!
+    #         dc_entity_Waiting_Time_global = {"Replicacao": run, "Name": "Paciente", "Type": "Wait Time", "Source": "Entity", "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),  # soma das médias os recursos!
+    #                                     "BatchMeansHalfWidth": calc_ic(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
+    #                                     "StDev": np.std(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
+    #                                     "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
+    #                                     "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
+    #                                     "NumberObservations": len(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila'])}
+    #
+    #         aba_1.append(dc_entity_Waiting_Time_global)
+    #
+    #     df_aba_1 = pd.DataFrame(aba_1)
+    #     df_aba_2 = pd.DataFrame(aba_2)
+    #     with pd.ExcelWriter('RESULTADOS_FINAIS.xlsx') as writer:
+    #         df_aba_1.to_excel(writer, sheet_name='DiscreteTimeStatsByRep')
+    #         df_aba_2.to_excel(writer, sheet_name='ContinuousTimeStatsByRep')
 
     def distribuicoes_cen4(processo, slot="None"):
         coef_processos = 60  # Conversão para minutos!!
@@ -377,7 +536,7 @@ if __name__ == "__main__":
 
 
         CorridaSimulacao_cenario = CorridaSimulacao(
-            replicacoes= 8,
+            replicacoes= 2,
             simulacao=simulacao_cenario,
             duracao_simulacao=tempo,
             periodo_warmup=warmup,
@@ -387,7 +546,7 @@ if __name__ == "__main__":
         dados_cenario = CorridaSimulacao_cenario.fecha_estatisticas_experimento()
         #corridas.append(copy.copy(CorridaSimulacao_cenario))
         estatisticas_finais[cen] = dados_cenario
-
+        cria_planilha(CorridaSimulacao_cenario, cen)
 
     #Formatação dos dataframes para plots - Formato 1!!
     dados_wip = list()
