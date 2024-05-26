@@ -166,6 +166,7 @@ class Simulacao():
         if gera_warm_up:
             CHART_THEME = 'plotly_white'
             df = self.recursos_est.df_estatisticas_recursos
+            #df = df.loc[df['T'] >= 5].reset_index()
             pr = 1
             df = df.loc[((df.prioridade_entidade == pr) & (df.recurso == "Clínico"))]
             fig = px.line(df, x="T", y="fila_acumulada_prioridade",
@@ -576,46 +577,6 @@ class Simulacao():
 
         for rc in rec_avaliados:
             dict_pr = dict()
-            # for pr in prs:
-            #     #Filas!
-            #     dados = df_rec_rep.loc[((df_rec_rep.recurso == rc) & (df_rec_rep.prioridade_entidade == pr))]['fila_acumulada_prioridade']
-            #     if len(dados) == 0:
-            #         #fila
-            #         dict_fila_pr = 0
-            #         dict_desv_pad = np.std(0)
-            #         dict_IC = 0
-            #         dict_min = 0
-            #         dict_max = 0
-            #         dict_len = 0
-            #
-            #     else:
-            #         #Fila
-            #         dict_fila_pr = np.mean(dados)
-            #         dict_desv_pad = np.std(dados)
-            #         dict_IC = calc_ic(dados)
-            #         dict_min = min(dados)
-            #         dict_max = max(dados)
-            #         dict_len = len(dados)
-            #
-            #     # Tempo atendimento
-            #     dados2 = df_rec_rep.loc[((df_rec_rep.recurso == rc) & (df_rec_rep.prioridade_entidade == pr))]['tempo_processo_por_prioridade']
-            #     if len(dados2) == 0:
-            #         at_pr = 0
-            #         desv_pad_at = 0
-            #         ic = 0
-            #         min_at = 0
-            #         max_at = 0
-            #         len_at = 0
-            #     else:
-            #         at_pr = np.mean(dados2)
-            #         desv_pad_at = np.std(dados2)
-            #         ic = calc_ic(dados2)
-            #         min_at = min(dados2)
-            #         max_at = max(dados2)
-            #         len_at = len(dados2)
-            #
-            #     dict_pr[pr] = {"dados_fila": dados, "dados_atendimento": dados2}
-
             dados = df_rec_rep.loc[(df_rec_rep.recurso == rc)]['fila_acumulada_prioridade']
             dados2 = df_rec_rep.loc[(df_rec_rep.recurso == rc)]['tempo_processo_por_prioridade']
             dict_rec2[rc] = {
@@ -623,37 +584,6 @@ class Simulacao():
                             "dados_fila" : dados,
                             "dados_atendimento": dados2,
                             "dados_entidade_em_fila": df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']
-
-                            # "desvio_pad_utilizacao": np.std(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']),
-                            # "IC_utilizacao": calc_ic(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']),
-                            # "max_utilizacao": max(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']),
-                            # "min_utilizacao": min(df_rec_rep.loc[df_rec_rep.recurso == rc]['utilizacao']),
-                            # "media_fila_todas_prioridades": np.mean(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
-                            # "desvio_padrao_fila_todas_prioridades": np.std(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
-                            # "IC_fila_todas_prioridades": calc_ic(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
-                            # "Min_fila_todas_prioridades": min(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
-                            # "Max_fila_todas_prioridades": max(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
-                            # "Numero_registros_fila_todas_prioridades" : len(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_fila_acumulada']),
-                            # "tempo_atendimento_todas_prioridades": np.mean(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
-                            # "desvio_padrao_atendimento_todas_prioridades": np.std(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
-                            # "IC_atendimento_todas_prioridades": calc_ic(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
-                            # "Min_atendimento_todas_prioridades": min(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
-                            # "Max_atendimento_todas_prioridades": max(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
-                            # "Numero_registros_todas_prioridades": len(df_rec_rep.loc[df_rec_rep.recurso == rc]['tempo_processo_acumulado']),
-                            # "Dados_por_prioridade": dict_pr,
-                            # 'media_tempo_fila_pr1_clinico': np.mean(df_rec_rep.loc[((df_rec_rep.recurso == 'Clínico') & (df_rec_rep.prioridade_entidade == 1))]['fila_acumulada_prioridade']),
-                            # "processo": list(df_rec_rep.loc[df_rec_rep.recurso == rc]['processo'])[0],
-                            # "numer_registros": len(list(df_rec_rep.loc[df_rec_rep.recurso == rc]['processo'])),
-                            # "media_entidades_em_fila": np.mean(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']),
-                            # "desvio_entidades_em_fila": np.std(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']),
-                            # "IC_entidades_em_fila": calc_ic(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']),
-                            # "min_entidades_em_fila": min(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']),
-                            # "max_entidades_em_fila": max(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_fila_acumulada']),
-                            # "media_entidades_em_atendimento": np.mean(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_atendimento_acumulado']),
-                            # "desvio_entidades_em_atendimento": np.std(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_atendimento_acumulado']),
-                            # "IC_entidades_em_atendimento": calc_ic(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_atendimento_acumulado']),
-                            # "min_entidades_em_atendimento": min(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_atendimento_acumulado']),
-                            # "max_entidades_em_atendimento": max(df_rec_rep.loc[df_rec_rep.recurso == rc]['media_entidades_em_atendimento_acumulado']),
                             }
 
 

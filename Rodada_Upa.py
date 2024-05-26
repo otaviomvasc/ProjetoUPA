@@ -345,90 +345,15 @@ if __name__ == "__main__":
                                   )
 
     CorridaSimulacao_base = CorridaSimulacao(
-            replicacoes=2,
+            replicacoes=1,
             simulacao=simulacao_base,
             duracao_simulacao=tempo,
-            periodo_warmup=0,
+            periodo_warmup=warmup,
             plota_histogramas=True
         )
-    #
-    # CorridaSimulacao_base.roda_simulacao()
-    # CorridaSimulacao_base.fecha_estatisticas_experimento()
-    #Aba 1
-    # Por recurso:
-    # def cria_planilha(CorridaSimulacao_base):
-    #     prs = [1, 2, 3, 4, 5, "sem_pr"]
-    #     recursos = [r for r in CorridaSimulacao_base.dados_planilha[0]['dados_tempo']]
-    #     aba_1 = list()
-    #     aba_2 = list()
-    #     for run in CorridaSimulacao_base.dados_planilha:
-    #         for rec in CorridaSimulacao_base.dados_planilha[run]['dados_tempo']:
-    #             dc_rec = {"Replicacao": run, "Name": rec + ".Queue", "Type": "Waiting Time", "Source": "Queue",
-    #                   "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
-    #                   "BatchMeansHalfWidth": calc_ic(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
-    #                   "StDev": np.std(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
-    #                   "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
-    #                   "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) if len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']) > 0 else 0,
-    #                   "NumberObservations":len(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_fila']),
-    #                   }
-    #             aba_1.append(dc_rec)
-    #
-    #             # TODO: Isso precisa ser o nome do processo!
-    #             dc_number_waiting = {"Replicacao": run, "Name": rec + ".Queue", "Type": "Number Waiting", "Source": "Queue",
-    #                              "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila']),
-    #                              "BatchMeansHalfWidth":calc_ic(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila']),
-    #                              "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila']),
-    #                              "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_entidade_em_fila'])}
-    #
-    #             aba_2.append(dc_number_waiting)
-    #
-    #             dc_utilizacao = {"Replicacao": run, "Name": rec , "Type": "Instantaneous Utilization", "Source": "Resource",
-    #                              "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao']),
-    #                              "BatchMeansHalfWidth":calc_ic(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao']),
-    #                              "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao']),
-    #                              "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['dados_tempo'][rec]['dados_utilizacao'])}
-    #             aba_2.append(dc_utilizacao)
-    #
-    #         dc_wip = {"Replicacao": run, "Name": "Pacientes", "Type": "WIP", "Source": "Entity",
-    #                          "Average": CorridaSimulacao_base.dados_planilha[run]['media_WIP'],
-    #                          "BatchMeansHalfWidth": CorridaSimulacao_base.dados_planilha[run]['IC_TS'],
-    #                          "Minimum": CorridaSimulacao_base.dados_planilha[run]['min_WIP'],
-    #                          "Maximum": CorridaSimulacao_base.dados_planilha[run]['max_wip'],}
-    #
-    #         aba_2.append(dc_wip)
-    #
-    #         dc_entity_Total_Time_global = {"Replicacao": run, "Name": "Paciente", "Type": "Total Time", "Source": "Entity", "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['media_tempo_sistema_total']),
-    #                      "BatchMeansHalfWidth": CorridaSimulacao_base.dados_planilha[run]['IC_TS'],
-    #                      "StDev": CorridaSimulacao_base.dados_planilha[run]['desv_pad_TS'],
-    #                      "Minimum":  CorridaSimulacao_base.dados_planilha[run]['min_TS'],
-    #                      "Maximum":  CorridaSimulacao_base.dados_planilha[run]['max_TS'],
-    #                      "NumberObservations": CorridaSimulacao_base.dados_planilha[run]} #TODO: Pegar num_observations!!!!
-    #         aba_1.append(dc_entity_Total_Time_global)
-    #         #TODO: Gerar dados globais!
-    #         dc_entity_VA_Time_global = {"Replicacao": run, "Name": "Paciente", "Type": "VA Time", "Source": "Entity", "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']), #soma das médias os recursos!
-    #                      "BatchMeansHalfWidth": calc_ic(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
-    #                      "StDev": np.std(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
-    #                      "Minimum":  min(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
-    #                      "Maximum":  max(CorridaSimulacao_base.dados_planilha[run]['Dados_TA']),
-    #                      "NumberObservations": len(CorridaSimulacao_base.dados_planilha[run]['Dados_TA'])}
-    #
-    #         aba_1.append(dc_entity_VA_Time_global)
-    #         #TODO: Gerar dados globais!
-    #         dc_entity_Waiting_Time_global = {"Replicacao": run, "Name": "Paciente", "Type": "Wait Time", "Source": "Entity", "Average": np.mean(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),  # soma das médias os recursos!
-    #                                     "BatchMeansHalfWidth": calc_ic(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
-    #                                     "StDev": np.std(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
-    #                                     "Minimum": min(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
-    #                                     "Maximum": max(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila']),
-    #                                     "NumberObservations": len(CorridaSimulacao_base.dados_planilha[run]['Dados_Fila'])}
-    #
-    #         aba_1.append(dc_entity_Waiting_Time_global)
-    #
-    #     df_aba_1 = pd.DataFrame(aba_1)
-    #     df_aba_2 = pd.DataFrame(aba_2)
-    #     with pd.ExcelWriter('RESULTADOS_FINAIS.xlsx') as writer:
-    #         df_aba_1.to_excel(writer, sheet_name='DiscreteTimeStatsByRep')
-    #         df_aba_2.to_excel(writer, sheet_name='ContinuousTimeStatsByRep')
 
+    #CorridaSimulacao_base.roda_simulacao()
+    b=0
     def distribuicoes_cen4(processo, slot="None"):
         coef_processos = 60  # Conversão para minutos!!
         coef_chegadas = 60
@@ -454,7 +379,7 @@ if __name__ == "__main__":
         return dados[processo]
 
     cenarios = {
-        # Cenário 1: Diminuindo uma secretária
+        # Cenário 1: Diminuindo uma secretária e diminuindo o tempo de processo
         "To Be 1": {"recursos": {"Secretária": [1, False],  # De 2 para 1
                                  "Enfermeira de Triagem": [2, False],
                                  "Clínico": [3, True],
@@ -536,7 +461,7 @@ if __name__ == "__main__":
 
 
         CorridaSimulacao_cenario = CorridaSimulacao(
-            replicacoes= 2,
+            replicacoes= 30,
             simulacao=simulacao_cenario,
             duracao_simulacao=tempo,
             periodo_warmup=warmup,
@@ -627,17 +552,18 @@ if __name__ == "__main__":
 
             fig.show()
 
+            #Não usei WIPS nos resultados
             #WIPS por cenário:
-            for cen in estatisticas_finais:
-                df_ = df_wip.loc[df_wip.Scenarios == cen]
-                fig = px.line(df_, x=df_.Duracao_Dias, y=df_.WIP, color="Run")
-                fig.update_layout(title=f'Global Average Entities in Process (WIP) - Scanerio {cen} ')
-                fig.update_xaxes(title='Duration (D)', showgrid=False)
-                fig.update_yaxes(title='Number os Patients')
-                fig.layout.template = CHART_THEME
-                fig.update_layout(title_x=0.5)
+            # for cen in estatisticas_finais:
+            #     df_ = df_wip.loc[df_wip.Scenarios == cen]
+            #     fig = px.line(df_, x=df_.Duracao_Dias, y=df_.WIP, color="Run")
+            #     fig.update_layout(title=f'Global Average Entities in Process (WIP) - Scanerio {cen} ')
+            #     fig.update_xaxes(title='Duration (D)', showgrid=False)
+            #     fig.update_yaxes(title='Number os Patients')
+            #     fig.layout.template = CHART_THEME
+            #     fig.update_layout(title_x=0.5)
 
-                fig.show()
+                #fig.show()
 
 
             #Limpar dfs wips para não pesar:
@@ -652,7 +578,7 @@ if __name__ == "__main__":
                                         "utilizacao" : "Resources Usage (%)",
                                         'prioridade_entidade':"Patient Priority",
                                         "processo": "Process",
-                                        "Tempo_fila": "Queue Time (Min)",
+                                        "tempo_fila_prioridade_entidade": "Queue Time (Min)",
 
                                         }, inplace=True)
             df_recursos['Resource'] = df_recursos.Resource.apply(lambda x: dicionario_traduzido_recursos[x])
@@ -665,90 +591,160 @@ if __name__ == "__main__":
             df_ocupacao_media_cenario_por_recurso["Resources Usage (%)"] = round(df_ocupacao_media_cenario_por_recurso["Resources Usage (%)"]*100, 2)
             fig = px.bar(df_ocupacao_media_cenario_por_recurso, x='Resource', y='Resources Usage (%)', color='Scenarios', barmode='group',
                          text='Resources Usage (%)', title='Average Utilization Resources in Scenarios')  # text="nation"
-            fig.update_traces(texttemplate='%{text:.2s}')
+            fig.update_traces(texttemplate='%{text:.2s}%')
             fig.layout.template = CHART_THEME
             fig.update_traces(textposition='outside')
             #fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
             #fig.update_xaxes(title='Recurso', showgrid=False)
             fig.update_yaxes(showticklabels=False)
             fig.update_layout(title_x=0.5)
+            fig.update_layout(font=dict(size=18))
+
             fig.show()
+
+
 
             #Média de utilizações por cenário - tentar agrupar em intervalos de tempo menor para gerar uma linha de fato, e não uma mancha (tirar a média arredondando?)!
             fig = px.bar(df_ocupacao_media_cenario_por_recurso, x='Scenarios', y='Resources Usage (%)', color='Resource', barmode='group',
                          text='Resources Usage (%)', title='Average Utilization Resources in Scenarios')  # text="nation"
-            fig.update_traces(texttemplate='%{text:.2s}')
+            fig.update_traces(texttemplate='%{text:.2s}%')
             fig.layout.template = CHART_THEME
             fig.update_traces(textposition='outside')
             #fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
             #fig.update_xaxes(title='Recurso', showgrid=False)
             fig.update_yaxes(showticklabels=False)
             fig.update_layout(title_x=0.5)
+            fig.update_layout(font=dict(size=18))
             fig.show()
+
+            #Utilizações para printar!
+            s =  [['As Is', 'To Be 1'],
+             ['As Is', 'To Be 2'],
+            ['As Is', 'To Be 3'],
+            ['As Is', 'To Be 4']]
+
+            #Gráficos de utilização que estão no word,comparanado apenas 2 arquivos!!
+            for s1 in s:
+                df = df_ocupacao_media_cenario_por_recurso.loc[df_ocupacao_media_cenario_por_recurso.Scenarios.isin(s1)]
+                fig = px.bar(df, x='Scenarios', y='Resources Usage (%)', color='Resource',
+                             barmode='group',
+                             text='Resources Usage (%)',
+                             title='Average Utilization Resources in Scenarios')  # text="nation"
+                fig.update_traces(texttemplate='%{text:.2s}%')
+                fig.layout.template = CHART_THEME
+                fig.update_traces(textposition='outside')
+                # fig.update_yaxes(title='Utilização Média (%)', showgrid=False)
+                # fig.update_xaxes(title='Recurso', showgrid=False)
+                fig.update_yaxes(showticklabels=False)
+                fig.update_layout(title_x=0.5)
+                fig.update_layout(font=dict(size=18))
+                fig.show()
+
+
 
 
             #médias de tempos de fila por processo - por cenário e geral?
             df_fila_media_por_processo = df_recursos.groupby(by=['Scenarios', "Process"]).agg({"Queue Time (Min)": "mean"}).reset_index()
-            df_fila_entidades = df_recursos.groupby(by=['Scenarios', "Process"]).agg({"tempo_fila_entidades": "mean"}).reset_index()
-            df_fila_entidades["tempo_fila_entidades"] = round(df_fila_entidades["tempo_fila_entidades"],2)
+            df_fila_entidades = df_recursos.groupby(by=['Scenarios', "Process"]).agg({"Queue Time (Min)": "mean"}).reset_index()
+            df_fila_entidades["Queue Time (Min)"] = round(df_fila_entidades["Queue Time (Min)"],2)
 
-            fig = px.bar(df_fila_entidades, x='Process', y='tempo_fila_entidades', color='Scenarios' ,text="tempo_fila_entidades", title= "Process Queue Time by Scenarios", barmode='group')
+            fig = px.bar(df_fila_entidades, x='Process', y="Queue Time (Min)", color='Scenarios' ,text="Queue Time (Min)", title= "Process Queue Time by Scenarios", barmode='group')
             fig.update_traces(texttemplate='%{text:.2s}')
             fig.layout.template = CHART_THEME
             fig.update_traces(textposition='outside')
             fig.update_yaxes(showticklabels=False)
             #fig.update_xaxes(showticklabels=False)
             fig.update_layout(title_x=0.5)
+            fig.update_layout(font=dict(size=18))
             fig.show()
 
             #Versão 2: Cenário x recurso
-            fig = px.bar(df_fila_entidades, x='Scenarios', y='tempo_fila_entidades', color='Process' ,text="tempo_fila_entidades", title= "Process Queue Time by Scenarios", barmode='group')
+            fig = px.bar(df_fila_entidades, x='Scenarios', y="Queue Time (Min)", color='Process' ,text="Queue Time (Min)", title= "Process Queue Time by Scenarios", barmode='group')
             fig.update_traces(texttemplate='%{text:.4}')
             fig.layout.template = CHART_THEME
             fig.update_traces(textposition='outside')
             fig.update_yaxes(showticklabels=False)
             #fig.update_xaxes(showticklabels=False)
             fig.update_layout(title_x=0.5)
+            fig.update_layout(font=dict(size=18))
             fig.show()
+
+
+            #Comparação as is/ outros cenários -
+            #
+            # for s1 in s:
+            #     df_1 = df_fila_entidades.loc[df_fila_entidades.Scenarios.isin(s1)].reset_index()
+            #     fig = px.bar(df_1, x='Scenarios', y='tempo_fila_entidades', color='Process' ,text="tempo_fila_entidades", title= "Process Queue Time by Scenarios", barmode='group')
+            #     fig.update_traces(texttemplate='%{text:.4}')
+            #     fig.layout.template = CHART_THEME
+            #     fig.update_traces(textposition='outside')
+            #     fig.update_yaxes(showticklabels=False)
+            #     #fig.update_xaxes(showticklabels=False)
+            #     fig.update_layout(title_x=0.5)
+            #     fig.update_layout(font=dict(size=18))
+            #     #fig.show()
+
+
+            #Comparação as is outros cenários por prioridade!
 
 
 
             #Tempos de fila por processo e por prioridade de paciente - Média geral!
             df_fila_media_prioridade =  df_recursos.groupby(by=['Scenarios', "Patient Priority"]).agg({"Queue Time (Min)": "mean"}).reset_index()
-            df_fila_entidades_prioridade = df_recursos.groupby(by=['Scenarios', "Patient Priority"]).agg({"tempo_fila_entidades": "mean"}).reset_index()
-            df_fila_entidades_prioridade["tempo_fila_entidades"] = round(df_fila_entidades_prioridade["tempo_fila_entidades"],2)
-            fig = px.bar(df_fila_entidades_prioridade, x='Patient Priority', y='tempo_fila_entidades', color='Scenarios' ,text="tempo_fila_entidades", title= "Process Queue Patient Priority",  barmode='group')
+            df_fila_entidades_prioridade = df_recursos.groupby(by=['Scenarios', "Patient Priority"]).agg({"Queue Time (Min)": "mean"}).reset_index()
+            df_fila_entidades_prioridade["Queue Time (Min)"] = round(df_fila_entidades_prioridade["Queue Time (Min)"],2)
+            fig = px.bar(df_fila_entidades_prioridade, x='Patient Priority', y="Queue Time (Min)", color='Scenarios' ,text="Queue Time (Min)", title= "Process Queue Patient Priority",  barmode='group')
             fig.update_traces(texttemplate='%{text:.4}')
             fig.layout.template = CHART_THEME
             fig.update_traces(textposition='outside')
             fig.update_yaxes(showticklabels=False)
             #fig.update_xaxes(showticklabels=False)
             fig.update_layout(title_x=0.5)
+            fig.update_layout(font=dict(size=18))
             fig.show()
 
 
             #Versão 2:
             df_fila_media_prioridade =  df_recursos.groupby(by=['Scenarios', "Patient Priority"]).agg({"Queue Time (Min)": "mean"}).reset_index()
-            df_fila_entidades_prioridade = df_recursos.groupby(by=['Scenarios', "Patient Priority"]).agg({"tempo_fila_entidades": "mean"}).reset_index()
-            df_fila_entidades_prioridade["tempo_fila_entidades"] = round(df_fila_entidades_prioridade["tempo_fila_entidades"],2)
-            fig = px.bar(df_fila_entidades_prioridade, x='Scenarios', y='tempo_fila_entidades', color='Patient Priority' ,text="tempo_fila_entidades", title= "Process Queue Patient Priority",  barmode='group')
+            df_fila_entidades_prioridade = df_recursos.groupby(by=['Scenarios', "Patient Priority"]).agg({"Queue Time (Min)": "mean"}).reset_index()
+            df_fila_entidades_prioridade["Queue Time (Min)"] = round(df_fila_entidades_prioridade["Queue Time (Min)"],2)
+            fig = px.bar(df_fila_entidades_prioridade, x='Scenarios', y="Queue Time (Min)", color='Patient Priority' ,text="Queue Time (Min)", title= "Process Queue Patient Priority")
             fig.update_traces(texttemplate='%{text:.4}')
             fig.layout.template = CHART_THEME
             fig.update_traces(textposition='outside')
             fig.update_yaxes(showticklabels=False)
             #fig.update_xaxes(showticklabels=False)
             fig.update_layout(title_x=0.5)
+            fig.update_layout(font=dict(size=18))
             fig.show()
 
+            #Versão 3: - Que está no word:
+            df_aux = df_recursos.loc[((df_recursos.Process == ' Clinical Consultation') & (df_recursos["Patient Priority"] == 1))].reset_index()
+            df_fila_processo_prioridade_entidade = df_aux.groupby(by=['Scenarios']).agg({"Queue Time (Min)": "mean"}).reset_index() #DF QUE INDICA O KPI DE MÉDIA DE TEMPO DE ESPERA DE PACIENTENTES PRIORIDADE 1 NO CLÍNICO!!
 
+            # for s2 in s:
+            #     df = df_fila_processo_prioridade_entidade.loc[((df_fila_processo_prioridade_entidade.Scenarios.isin(s2)) & (df_fila_processo_prioridade_entidade.Process == ' Clinical Consultation')
+            #                                                    & (df_fila_processo_prioridade_entidade["Patient Priority"] == 1))]
+            #     fig = px.bar(df, x='Patient Priority', y='Queue Time (Min)',
+            #                  color='Process',
+            #                  text="Queue Time (Min)", title="Process Queue Patient Priority")
+            #     fig.update_traces(texttemplate='%{text:.4}')
+            #     fig.layout.template = CHART_THEME
+            #     fig.update_traces(textposition='outside')
+            #     fig.update_yaxes(showticklabels=False)
+            #     # fig.update_xaxes(showticklabels=False)
+            #     fig.update_layout(title_x=0.5)
+            #     fig.update_layout(font=dict(size=18))
+            #     fig.show()
 
-            fig = px.bar(df_fila_entidades_prioridade, x='Scenarios', y='tempo_fila_entidades', color='Patient Priority' ,text="tempo_fila_entidades", title= "Process Queue Patient Priority", barmode='group')
+            fig = px.bar(df_fila_entidades_prioridade, x='Scenarios', y="Queue Time (Min)", color='Patient Priority' ,text="Queue Time (Min)", title= "Process Queue Patient Priority", barmode='group')
             fig.update_traces(texttemplate='%{text:.4}')
             fig.layout.template = CHART_THEME
             fig.update_traces(textposition='outside')
             fig.update_yaxes(showticklabels=False)
             #fig.update_xaxes(showticklabels=False)
             fig.update_layout(title_x=0.5)
+            fig.update_layout(font=dict(size=18))
             fig.show()
 
 
@@ -762,6 +758,7 @@ if __name__ == "__main__":
             fig.update_yaxes(showticklabels=False)
             #fig.update_xaxes(showticklabels=False)
             fig.update_layout(title_x=0.5)
+            fig.update_layout(font=dict(size=18))
             fig.show()
 
 
@@ -777,6 +774,7 @@ if __name__ == "__main__":
             fig.update_yaxes(showticklabels=False)
             #fig.update_xaxes(showticklabels=False)
             fig.update_layout(title_x=0.5)
+            fig.update_layout(font=dict(size=18))
             fig.show()
 
             b=0
