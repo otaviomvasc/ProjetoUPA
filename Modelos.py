@@ -28,6 +28,8 @@ class Simulacao():
         self.recursos_liberados_processo = liberacao_recurso
         self.warmup=warmup
         self.converte_dias = 86400
+        self.param_m = 405
+        self.prox_avaliação = self.param_m*60
 
     def comeca_simulacao(self):
         self.env.process(self.gera_chegadas())
@@ -50,12 +52,48 @@ class Simulacao():
         if processo != "Ficha":
             self.estatisticas_sistema.computa_entidade_entrando_em_fila(self.env.now)
 
+        #Avaliar atendimento de pacientes muito tempo na fila de N em N minutos para não deixar simulação muito lenta.
+
+        #if self.env.now > self.prox_avaliação:
+
+        #Retirar entidades com prioridades 4 e 5 do sistema, porque na realidade eles desistem antes que finalize os 240 minutos na fila
+        if self.env.now >  self.prox_avaliação:
+            ents_tempo_espera_longo = [ent for ent in self.entidades.lista_entidades
+                                       if ent.atributos.get('prioridade', 0) > 3
+                                       and ent.saida_sistema == 0
+                                       and ent.atributos.get('prioridade_retorno', 0) != 3
+                                       and self.env.now - ent.entra_fila > self.param_m * 60]
+            for ent in ents_tempo_espera_longo:
+                ent.saida_sistema = self.env.now
+                ent.processo_atual = "Saída"
+                entidade_individual.sai_fila = self.env.now
+                ent.fecha_ciclo(processo="Saída")
+                #Deletar o requests antigo!
+                result = dict()
+                for rec in self.recursos:
+                    try:
+                        self.recursos[rec].queue.remove(ent.lista_requests[0])
+                        break
+                    except:
+                        continue
+
+                self.estatisticas_sistema.computa_saidas(self.env.now)
+                if self.imprime_detalhes:
+                    print(f'{self.env.now}: Entidade {ent.nome} saiu do sistema!')
+                self.estatisticas_sistema.computa_saidas(self.env.now)
+            self.prox_avaliação += self.param_m * 60
+
+
         #TODO: alterei o get para primeiro buscar se tem prioridade retorno.Caso não exista a chave no dicionario de atributos, buscara a prioridade de atendimento normal. Optei por deixar explicito!
         requests_recursos = [self.recursos[recurso_humando].request() if type(self.recursos[recurso_humando]) == simpy.resources.resource.Resource
                              else self.recursos[recurso_humando].request(priority=entidade_individual.atributos.get("prioridade_retorno",entidade_individual.atributos.get('prioridade', 5)))
                              for recurso_humando in self.necessidade_recursos[processo]]
 
         entidade_individual.lista_requests.extend(requests_recursos) #Salvando requests na entidade para conseguir liberar um request em outro processo!!
+
+        #Alteração para impedir que entidades de prioridades menores fiquem tempo demais na fila!
+
+
         for request in requests_recursos:
             yield request
 
@@ -162,6 +200,17 @@ class Simulacao():
         self.estatisticas_sistema.fecha_estatisticas(warmup=self.warmup)
         self.resultados_da_replicacao, dados_planilha = self.calcula_estatisticas_da_replicacao()
         #limpa todos os dados para não pesar a classe
+        verifica = False
+        df_fim = 0
+        if verifica:
+            df = self.recursos_est.df_estatisticas_recursos
+            df = df.loc[df['T'] >= 5].reset_index() #retirada do warm-up
+            fila_media_ficha = np.mean(df.loc[df.processo == 'Ficha']['tempo_fila_acumulada'])
+            fila_media_triagem = np.mean(df.loc[df.processo == 'Triagem']['tempo_fila_acumulada'])
+            print(f'fila acolhida: {fila_media_ficha + fila_media_triagem}')
+            df_clinico = df.loc[df.processo == 'Clínico'].reset_index()
+            df_fim = df_clinico.groupby(by=['prioridade_entidade']).agg({"fila_acumulada_prioridade": "mean"}).reset_index()
+            print(df_clinico.groupby(by=['prioridade_entidade']).agg({"fila_acumulada_prioridade": "mean"}))
         gera_warm_up = False
         if gera_warm_up:
             CHART_THEME = 'plotly_white'
@@ -176,9 +225,8 @@ class Simulacao():
             fig.update_xaxes(title='Duration (D)', showgrid=False)
             fig.update_yaxes(title='Queue Average (Min)')
             fig.show()
-            b = 0
         self.limpa_dados()
-        return dados_planilha
+        return dados_planilha, df_fim
     def gera_graficos(self,n, plota):
         #Graficos de WIP, entrada e saída
         def retorna_prioridade(paciente, lista_entidades):
@@ -885,14 +933,18 @@ class CorridaSimulacao():
         self.dados = pd.DataFrame()
         self.plota_graficos_finais = plota_histogramas
         self.dados_planilha = dict()
+        self.dados_fila_validacao = [[], [], [], []]
     def roda_simulacao(self, gera_planilha=False):
+        df_aux = pd.DataFrame()
         for n_sim in range(len(self.simulacoes)):
             print(f'Simulação {n_sim + 1}')
             print('-' * 150)
             simulacao = self.simulacoes[n_sim]
             simulacao.comeca_simulacao()
             simulacao.env.run(until=simulacao.tempo)
-            dados_p = simulacao.finaliza_todas_estatisticas()
+            dados_p, dados_validacao = simulacao.finaliza_todas_estatisticas()
+            # dados_validacao['rep'] = n_sim
+            # df_aux = pd.concat([df_aux, dados_validacao])
             self.dados_planilha[n_sim] = dados_p
 
             #if len(self.simulacoes) == 1:

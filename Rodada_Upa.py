@@ -150,6 +150,7 @@ if __name__ == "__main__":
 
     #Dados e parâmetros default em todos os cenários:
     #seed(1000)
+    #seed(1)
     ordem_processo = {
         "Ficha": "Triagem",
         "Triagem": ["decide_atendimento"],
@@ -219,8 +220,8 @@ if __name__ == "__main__":
         classificacao_clinico_pediatra = [["Clínico", 0.78],
                                           ["Pediatra", 0.22]]
         # 5 - menos grave e 1 - mais grave
-        classificacao_prioridade = [[5, 0.032],
-                                    [4, 0.001],
+        classificacao_prioridade = [
+                                    [4, 0.033],
                                     [3, 0.70129],
                                     [2, 0.150],
                                     [1, 0.117]]
@@ -296,7 +297,6 @@ if __name__ == "__main__":
 
     warmup = 5 * 86400
     replicacoes = 30
-    #seed(1000)
     recursos_base = {"Secretária": [2, False],
                                "Enfermeira de Triagem": [2, False],
                                "Clínico": [3, True],
@@ -312,9 +312,9 @@ if __name__ == "__main__":
         coef_chegadas = 60
         coef_checkin = 60
         dados = {"Chegada": expovariate(0.0029),
-                 "Ficha": random.triangular(2 * 2.12 * coef_chegadas, 7 * 2.12 * coef_chegadas,
-                                            4 * 2.12 * coef_chegadas),
-                 "Triagem": random.triangular(4 * 1.6 * coef_chegadas, 9 * 1.6 * coef_chegadas,
+                 "Ficha": random.triangular(2 * 2.1 * coef_chegadas, 7 * 2.1 * coef_chegadas,
+                                            4 * 2.1 * coef_chegadas),
+                 "Triagem": random.triangular(4 * 1.3 * coef_chegadas, 9 * 1.3 * coef_chegadas,
                                               7 * 1.6 * coef_chegadas),
                  "Clínico": random.triangular(10 * 0.95 * coef_chegadas, 20 * 0.95 * coef_chegadas, 15 * 0.95 * coef_chegadas),
                  "Pediatra": random.triangular(8 * coef_chegadas, 20 * coef_chegadas, 15 * coef_chegadas),
@@ -330,30 +330,30 @@ if __name__ == "__main__":
                  }
 
         return dados[processo]
-
     #Rodada para 1 cenário apenas!!
-    simulacao_base = Simulacao(distribuicoes=distribuicoes_base,
-                                  imprime=False,
-                                  recursos=recursos_base,
-                                  dist_prob=distribuicoes_probabilidade,
-                                  tempo=tempo,
-                                  necessidade_recursos=necessidade_recursos,
-                                  ordem_processo=ordem_processo,
-                                  atribuicoes=atribuicoes_processo,
-                                  liberacao_recurso=liberacao_recursos,
-                                  warmup=0,
-                                  )
+    # simulacao_base = Simulacao(distribuicoes=distribuicoes_base,
+    #                               imprime=False,
+    #                               recursos=recursos_base,
+    #                               dist_prob=distribuicoes_probabilidade,
+    #                               tempo=tempo,
+    #                               necessidade_recursos=necessidade_recursos,
+    #                               ordem_processo=ordem_processo,
+    #                               atribuicoes=atribuicoes_processo,
+    #                               liberacao_recurso=liberacao_recursos,
+    #                               warmup=0,
+    #                               )
+    #
+    # CorridaSimulacao_base = CorridaSimulacao(
+    #         replicacoes=55,
+    #         simulacao=simulacao_base,
+    #         duracao_simulacao=tempo,
+    #         periodo_warmup=warmup,
+    #         plota_histogramas=True
+    #     )
+    # CorridaSimulacao_base.roda_simulacao()
+    # dados_cenario = CorridaSimulacao_base.fecha_estatisticas_experimento()
 
-    CorridaSimulacao_base = CorridaSimulacao(
-            replicacoes=1,
-            simulacao=simulacao_base,
-            duracao_simulacao=tempo,
-            periodo_warmup=warmup,
-            plota_histogramas=True
-        )
 
-    #CorridaSimulacao_base.roda_simulacao()
-    b=0
     def distribuicoes_cen4(processo, slot="None"):
         coef_processos = 60  # Conversão para minutos!!
         coef_chegadas = 60
@@ -461,7 +461,7 @@ if __name__ == "__main__":
 
 
         CorridaSimulacao_cenario = CorridaSimulacao(
-            replicacoes= 30,
+            replicacoes= 55,
             simulacao=simulacao_cenario,
             duracao_simulacao=tempo,
             periodo_warmup=warmup,
@@ -537,20 +537,20 @@ if __name__ == "__main__":
             #Gerar gráficos de cada simulação para todas as corridas!!
             #Gráfico WIP!
 
-            df_wip = pd.DataFrame(dados_wip).explode(["WIP", "discretizacao"])
-            df_wip.rename(columns={"Cenário": "Scenarios", "Replicação": "Run"}, inplace=True)
-            df_wip['Duracao_Dias'] = df_wip.discretizacao / 86000
-            #df_scenario_run_WIP = df_wip.groupby(by=['Scenarios', 'discretizacao', 'Run']).agg({"WIP": "mean"}).reset_index()
-            #duracao_dias_sr = [converte_segundos_em_dias(x) for x in df_wip.discretizacao]
+            # df_wip = pd.DataFrame(dados_wip).explode(["WIP", "discretizacao"])
+            # df_wip.rename(columns={"Cenário": "Scenarios", "Replicação": "Run"}, inplace=True)
+            # df_wip['Duracao_Dias'] = df_wip.discretizacao / 86000
+            # #df_scenario_run_WIP = df_wip.groupby(by=['Scenarios', 'discretizacao', 'Run']).agg({"WIP": "mean"}).reset_index()
+            # #duracao_dias_sr = [converte_segundos_em_dias(x) for x in df_wip.discretizacao]
+            #
+            # fig = px.line(df_wip, x=df_wip.Duracao_Dias, y=df_wip.WIP, color="Scenarios")
+            # fig.update_layout(title='Global Average Entities in Process (WIP)')
+            # fig.update_xaxes(title='Duration (D)', showgrid=False)
+            # fig.update_yaxes(title='Number os Patients')
+            # fig.layout.template = CHART_THEME
+            # fig.update_layout(title_x=0.5)
 
-            fig = px.line(df_wip, x=df_wip.Duracao_Dias, y=df_wip.WIP, color="Scenarios")
-            fig.update_layout(title='Global Average Entities in Process (WIP)')
-            fig.update_xaxes(title='Duration (D)', showgrid=False)
-            fig.update_yaxes(title='Number os Patients')
-            fig.layout.template = CHART_THEME
-            fig.update_layout(title_x=0.5)
-
-            fig.show()
+            #fig.show()
 
             #Não usei WIPS nos resultados
             #WIPS por cenário:
@@ -584,7 +584,7 @@ if __name__ == "__main__":
             df_recursos['Resource'] = df_recursos.Resource.apply(lambda x: dicionario_traduzido_recursos[x])
             df_recursos['Process'] = df_recursos.Process.apply(lambda x: dicionario_traduzido_processos[x])
 
-
+            df_recursos.to_csv("dados_recursos.csv", sep=';')
             #Utilizações:
             #Média geral por cenário!
             df_ocupacao_media_cenario_por_recurso = df_recursos.groupby(by=['Scenarios', 'Resource']).agg({"Resources Usage (%)": 'mean'}).reset_index()
