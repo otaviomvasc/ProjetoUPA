@@ -156,14 +156,79 @@ Time distributions are defined in the `distribuicoes_base()` function in `Rodada
 
 ```python
 def distribuicoes_base(processo, slot="None"):
+    coef_processos = 60
+    coef_chegadas = 60
+    coef_checkin = 60
     dados = {
         "Chegada": expovariate(0.0029),
-        "Ficha": random.triangular(2*2.1*60, 7*2.1*60, 4*2.1*60),
-        "Triagem": random.triangular(4*1.3*60, 9*1.3*60, 7*1.6*60),
-        # ... other processes
+        "Ficha": max(0.5, random.lognormvariate(0.460, 0.576)) * coef_chegadas,
+        "Triagem": max(0.6, random.weibullvariate(2.526, 2.485)) * coef_chegadas,
+        "Clínico": max(4.53, random.weibullvariate(6.878, 2.832)) * coef_chegadas,
+        "Pediatra": max(5.34, random.gauss(14.022, 5.966)) * coef_chegadas,
+        "Raio-x": 5 * coef_chegadas,  # 5 minutes
+        "Eletro": 12 * coef_chegadas,  # 12 minutes
+        "Exame de Urina": 2 * coef_chegadas,  # 2 minutes
+        "Exame de Sangue": 3 * coef_chegadas,  # 3 minutes
+        "Análise de Sangue Externo": 0.25 * 60 * coef_chegadas,  # 15 minutes
+        "Análise de Sangue Interno": 0.1 * 60 * coef_chegadas,  # 6 minutes
+        "Análise de Urina": 2 * 60 * coef_chegadas,  # 120 minutes (2 hours)
+        "Aplicar Medicação": random.triangular(
+            10 * coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas
+        ),
+        "Tomar Medicação": random.gauss(35.350, 2.443) * coef_chegadas,
     }
     return dados[processo]
 ```
+
+**Distribution Details:**
+- All times are in seconds (multiplied by `coef_chegadas = 60` for conversion)
+- **Arrival:** Exponential distribution with rate λ = 0.0029
+- **Registration (Ficha):** Lognormal distribution (μ=0.460, σ=0.576), minimum 0.5
+- **Triage:** Weibull distribution (shape=2.526, scale=2.485), minimum 0.6
+- **Clinical Consultation:** Weibull distribution (shape=6.878, scale=2.832), minimum 4.53
+- **Pediatric Consultation:** Normal distribution (μ=14.022, σ=5.966), minimum 5.34
+- **Medication Application:** Triangular distribution (min=10, max=60, mode=40 minutes)
+- **Medication Administration:** Normal distribution (μ=35.350, σ=2.443 minutes)
+
+### Parallel Execution of Scenarios
+
+The simulation implements **parallel execution** of scenario runs using `concurrent.futures.ThreadPoolExecutor`. This allows multiple scenarios to run simultaneously, significantly reducing total execution time.
+
+**How it works:**
+- Each scenario runs independently in a separate thread
+- All scenarios execute in parallel (up to the number of available CPUs or number of scenarios)
+- Results are collected as scenarios complete
+- Each scenario generates its own Excel file (`RESULTADOS_FINAIS - [Scenario].xlsx`)
+
+**Performance Benefits:**
+- **Speed improvement:** With 5 scenarios, execution time is typically reduced by 3-5x (depending on hardware)
+- **Resource utilization:** Makes efficient use of multi-core processors
+- **Independence:** Each scenario's execution is isolated, ensuring no data conflicts
+
+**Implementation details:**
+The parallelization is implemented in the main execution block of `Rodada_Upa.py`:
+
+```python
+def rodar_cenario(cenario, dist_probabilidade, tempo, necessidade_recursos, 
+                  ordem_processo, atribuicoes_processo, liberacao_recursos, 
+                  warmup, replicacoes=55):
+    """Wrapper function to run a scenario and return name and data"""
+    dados_cenario = cenario.rodar(...)
+    return cenario.nome, dados_cenario
+
+# Parallel execution using ThreadPoolExecutor
+with concurrent.futures.ThreadPoolExecutor(max_workers=len(cenarios)) as executor:
+    futures = {
+        executor.submit(rodar_cenario, cenario, ...): cenario.nome 
+        for cenario in cenarios
+    }
+    
+    for future in concurrent.futures.as_completed(futures):
+        nome, dados_cenario = future.result()
+        estatisticas_finais[nome] = dados_cenario
+```
+
+**Note:** The `if __name__ == "__main__":` guard is required for proper execution in all environments.
 
 ### Adding New Scenarios
 

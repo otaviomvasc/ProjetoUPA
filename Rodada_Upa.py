@@ -12,7 +12,7 @@ from random import expovariate, seed, normalvariate
 from scipy import stats
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-
+import concurrent.futures
 from Modelos import *
 
 seed(1)
@@ -694,20 +694,61 @@ if __name__ == "__main__":
     ]
 
     estatisticas_finais = dict()
-    # Rodada dos cenários
-    for cenario in cenarios:
+
+    def rodar_cenario(
+        cenario,
+        dist_probabilidade,
+        tempo,
+        necessidade_recursos,
+        ordem_processo,
+        atribuicoes_processo,
+        liberacao_recursos,
+        warmup,
+        replicacoes=55,
+    ):
+        """Wrapper para rodar um cenário e retornar o nome e dados"""
         dados_cenario = cenario.rodar(
-            dist_probabilidade=distribuicoes_probabilidade,
+            dist_probabilidade=dist_probabilidade,
             tempo=tempo,
             necessidade_recursos=necessidade_recursos,
             ordem_processo=ordem_processo,
             atribuicoes_processo=atribuicoes_processo,
             liberacao_recursos=liberacao_recursos,
             warmup=warmup,
-            replicacoes=55,
+            replicacoes=replicacoes,
             imprime=False,
         )
-        estatisticas_finais[cenario.nome] = dados_cenario
+        return cenario.nome, dados_cenario
+
+    # Paralelização usando ProcessPoolExecutor
+    # max_workers=None usa o número de CPUs disponíveis
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(cenarios)) as executor:
+        # Submete todas as tarefas
+        futures = {
+            executor.submit(
+                rodar_cenario,
+                cenario,
+                distribuicoes_probabilidade,
+                tempo,
+                necessidade_recursos,
+                ordem_processo,
+                atribuicoes_processo,
+                liberacao_recursos,
+                warmup,
+                55,
+            ): cenario.nome
+            for cenario in cenarios
+        }
+
+        # Coleta os resultados conforme completam
+        for future in concurrent.futures.as_completed(futures):
+            nome_cenario = futures[future]
+            try:
+                nome, dados_cenario = future.result()
+                estatisticas_finais[nome] = dados_cenario
+                print(f"✓ Cenário '{nome}' concluído!")
+            except Exception as exc:
+                print(f"✗ Cenário '{nome_cenario}' gerou exceção: {exc}")
 
     # Formatação dos dataframes para plots - Formato 1!!
     dados_wip = list()
