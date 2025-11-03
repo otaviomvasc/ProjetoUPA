@@ -2,7 +2,9 @@
 
 ## 📋 Description
 
-Code for the manuscript titled "Evaluating the Efficiency of a Public Emergency Care Unit through Computer Simulation," which implements a discrete-event simulation of an Emergency Care Unit (UPA) using the SimPy library. The system simulates the flow of patients through various medical processes, including triage, clinical and pediatric consultations, exams, and medication administration.
+This repository contains the implementation of a discrete-event simulation framework developed for the research paper "A Generic Simulation Framework for Emergency Care Units: Modeling Patient Flow and Resource Utilization" using the lib Simpy. The project includes the datasets and statistical distributions used, the simulation code, the model structure representing the patient flow, and the methods employed to generate the visualizations used in the analysis of the system, resource utilization and potential bottlenecks.
+
+
 
 ## 🎯 Objectives
 
