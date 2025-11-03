@@ -102,10 +102,9 @@ class Simulacao:
                 self.estatisticas_sistema.computa_saidas(self.env.now)
                 if self.imprime_detalhes:
                     print(f"{self.env.now}: Entidade {ent.nome} saiu do sistema!")
-                self.estatisticas_sistema.computa_saidas(self.env.now)
+                # self.estatisticas_sistema.computa_saidas(self.env.now)
             self.prox_avaliação += self.param_m * 60
 
-        # TODO: alterei o get para primeiro buscar se tem prioridade retorno.Caso não exista a chave no dicionario de atributos, buscara a prioridade de atendimento normal. Optei por deixar explicito!
         requests_recursos = [
             (
                 self.recursos[recurso_humando].request()
@@ -138,9 +137,7 @@ class Simulacao:
 
         entidade_individual.sai_fila = self.env.now
         self.estatisticas_sistema.computa_entidade_saindo_da_fila(self.env.now)
-        entidade_individual.entra_processo = (
-            self.env.now
-        )  # TODO: esse valor é sempre igual ao sai fila. Logo pode ser uma variável só!
+        entidade_individual.entra_processo = self.env.now
         # self.estatisticas_sistema.computa_entidade_entrando_atendimento(self.env.now)
 
         # delay
@@ -291,7 +288,7 @@ class Simulacao:
         # Agrupa os dados
         self.entidades.fecha_estatisticas(
             warmup=self.warmup, nec_recursos=self.necessidade_recursos
-        )  # TODO: Acelerar a busca pela prioridade das entidades!!!
+        )
         self.recursos_est.fecha_estatisticas(
             warmup=self.warmup, df_entidades=self.entidades.df_entidades
         )
@@ -879,7 +876,7 @@ class Simulacao:
             ["ficha", "triagem", "pediatra", "raio-x", "eletro", "pediatra", "saida"],
             ["ficha", "triagem", "pediatra", "eletro", "raio-x", "pediatra", "saida"],
             # fluxos incompletos
-            # ['ficha', 'triagem', 'clinico', 'urina', 'eletro', 'clinico'], #TODO: porque não saiu do sistema?
+            # ['ficha', 'triagem', 'clinico', 'urina', 'eletro', 'clinico'],
             # ['ficha', 'triagem', 'clinico', 'eletro', 'clinico'],
             ["ficha", "triagem", "clinico"],
             ["ficha", "triagem", "pediatra"],
@@ -1143,9 +1140,7 @@ class EstatisticasSistema:
         print(f"Chegadas: {self.chegadas}")
         print(f"Saídas: {self.saidas}")
         print(f"WIP: {self.WIP} ")
-        entidades_sistema = np.mean(
-            [rec["WIP"] for rec in self.entidades_sistema]
-        )  # TODO: Verificar como esse cálculo ta sendo feito!!
+        entidades_sistema = np.mean([rec["WIP"] for rec in self.entidades_sistema])
         dict_aux = {
             "Chegadas": self.chegadas,
             "Saidas": self.saidas,
@@ -1164,7 +1159,7 @@ class EstatisticasSistema:
         ]
 
     def computa_chegadas(self, momento):
-        # TODO: Adaptar para computar chegadas de mais de um indivíduo!!!!
+
         self.chegadas += 1
         self.WIP += 1
         self.em_fila += 1
@@ -1274,8 +1269,7 @@ class Entidades:
             elif len(processo_aux) == 1:
                 return processo_aux[0]
 
-        tempo_sistema = list()  # TODO:Loop está muito lento. Melhorar!
-        # Dados estão sendo calculados errados. Métricas de Tempo de sistema, tempo de fila e tempo de atendimento não precisam ser calculadas aqui!
+        tempo_sistema = list()
         self.df_entidades = pd.DataFrame(
             [est for ent in self.lista_entidades for est in ent.estatisticas]
         )
@@ -1508,9 +1502,9 @@ class CorridaSimulacao:
         self.df_estatisticas_sistema = pd.DataFrame()
         self.df_estatisticas_recursos = pd.DataFrame()
         self.df_estatistcas_sistemas_brutos = pd.DataFrame()
-        self.duracao_simulacao = duracao_simulacao  # TODO: Tirar do código
+        self.duracao_simulacao = duracao_simulacao
         self.simulacoes = [deepcopy(simulacao) for i in range(replicacoes)]
-        self.periodo_warmup = periodo_warmup  # TODO: Tirar do código
+        self.periodo_warmup = periodo_warmup
         self.dados = pd.DataFrame()
         self.plota_graficos_finais = plota_histogramas
         self.dados_planilha = dict()
@@ -1835,7 +1829,6 @@ class CorridaSimulacao:
             print("Indicadores de Desempenho do Sistema", end="\n")
             print("=" * comprimento_linha)
 
-            # TODO: Preciso calcular recursos/entidades por processo ?
             print(
                 "NS: {0:.2f} \u00b1 {1:.2f} entidades (IC 95%)".format(
                     np.mean(NS_), calc_ic(NS)
@@ -1888,11 +1881,8 @@ class CorridaSimulacao:
             )
             print("=" * comprimento_linha, end="\n")
 
-            # TODO: Usar resultados finais do artigo como atributo da classe ou retorno da função?
             # Definição dos valores finais para salvamento e gráficos:
-            self.numero_atendimentos = (
-                saidas  # TODO: checar porque está saindo mais gente do que entrando!!
-            )
+            self.numero_atendimentos = saidas
             self.utilizacao_media = np.mean(USO) * 100
             self.media_em_fila_geral = (np.mean(TF_), calc_ic(TF))
             self.df_media_fila_por_prioridade = (
