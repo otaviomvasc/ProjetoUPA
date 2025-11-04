@@ -2,8 +2,17 @@
 
 ## 📋 Description
 
-This repository contains the implementation of a discrete-event simulation framework developed for the research paper "A Generic Simulation Framework for Emergency Care Units: Modeling Patient Flow and Resource Utilization" using the lib Simpy. The project includes the datasets and statistical distributions used, the simulation code, the model structure representing the patient flow, and the methods employed to generate the visualizations used in the analysis of the system, resource utilization and potential bottlenecks.
+This repository contains the suplementary material  of a discrete-event simulation framework developed for the research paper "A Generic Simulation Framework for Emergency Care Units: Modeling Patient Flow and Resource Utilization" using the lib Simpy to Operational Research Journal. The project includes the datasets and statistical distributions used, the simulation code, the model structure representing the patient flow, and the methods employed to generate the visualizations used in the analysis of the system, resource utilization and potential bottlenecks.
 
+
+Citations: ALMEIDA, J. F. de F.; VASCONCELOS, O. M. A generic simulation framework for emergency care units: Modeling patient flow and resource utilization using Sympy. 2025.
+
+@unpublished{almeida_vasconcelos_2025,
+  author       = {ALMEIDA, J. F. de F. and VASCONCELOS, O. M.},
+  title        = {A Generic Simulation Framework for Emergency Care Units: Modeling Patient Flow and Resource Utilization Using Sympy},
+  note         = {Manuscrito em preparação},
+  year         = {2025}
+}
 
 
 ## 🎯 Objectives
