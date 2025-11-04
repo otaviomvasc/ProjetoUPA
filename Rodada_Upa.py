@@ -40,6 +40,11 @@ Total = 132 + 1066 + 6178 + 8 + 246 = 7630
     segundos_no_mes = 30 * 24 * 60 * 60 = 2592000
     media_chegadas / segundo = 6714.0 / 2592000 = 0.026
  
+
+4 - Taxa de chedada 2024
+    media_de_chegadas = 116174 / 12 = 9181
+    segundos_no_mes = 30 * 24 * 60 * 60 = 2592000
+    media_chegadas / segundo = 9181 / 2592000 = 0.0035
 """
 
 
@@ -311,7 +316,7 @@ def distribuicoes_cen4(processo, slot="None"):
     coef_chegadas = 60
     coef_checkin = 60
     dados = {
-        "Chegada": expovariate(0.0029),
+        "Chegada": expovariate(0.0035),
         "Ficha": max(
             0.5,
             random.lognormvariate(0.460, 0.576),
@@ -398,7 +403,7 @@ def distribuicoes_base(processo, slot="None"):
     coef_chegadas = 60
     coef_checkin = 60
     dados = {
-        "Chegada": expovariate(0.0029),
+        "Chegada": expovariate(0.0035),
         "Ficha": max(
             0.5,
             random.lognormvariate(0.460, 0.576),
