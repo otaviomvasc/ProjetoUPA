@@ -1,0 +1,81 @@
+
+Distribution Fitting Summary Report
+==================================================
+
+Data Statistics:
+- Sample size: 32
+- Mean: 4.7575
+- Std Dev: 2.3272
+- Min: 0.6000
+- Max: 12.3000
+
+Best Fitting Distribution: lognorm
+- Parameters: s=0.241, loc=-4.454, scale=8.946
+- P-value: 0.9381
+- Significant at α=0.05: Yes
+
+Python Random Code:
+random.lognormvariate(-4.454, 8.946)
+
+Top 3 Distributions by P-value:
+1. lognorm: p-value = 0.9381 (Significant: Yes)
+2. weibull_min: p-value = 0.9325 (Significant: Yes)
+3. gamma: p-value = 0.9240 (Significant: Yes)
+
+
+Detailed Results:
+--------------------------------------------------------------------------------
+1. lognorm
+   Parameters: s=0.2412, loc=-4.4540, scale=8.9457
+   P-value: 0.938077
+   Statistic: 0.089814
+   Python code: random.lognormvariate(-4.454, 8.946)
+
+2. weibull_min
+   Parameters: c=1.1428, loc=2.4850, scale=2.5261
+   P-value: 0.932505
+   Statistic: 0.090889
+   Python code: random.weibullvariate(2.526, 2.485)
+
+3. gamma
+   Parameters: a=9.0600, loc=-2.0111, scale=0.7471
+   P-value: 0.924003
+   Statistic: 0.092438
+   Python code: random.gammavariate(9.060, 1.339)
+
+4. beta
+   Parameters: a=8.5414, b=4192784.0708, loc=-1.8508, scale=3245153.5895
+   P-value: 0.915740
+   Statistic: 0.093855
+   Python code: random.betavariate(8.541, 4192784.071)
+
+5. norm
+   Parameters: loc=4.7575, scale=2.2905
+   P-value: 0.877242
+   Statistic: 0.099669
+   Python code: random.gauss(4.757, 2.291)
+
+6. triang
+   Parameters: c=0.2400, loc=0.0450, scale=12.8149
+   P-value: 0.250529
+   Statistic: 0.174938
+   Python code: random.triangular(0.045, 12.860, 3.120)
+
+7. expon
+   Parameters: loc=0.6000, scale=4.1575
+   P-value: 0.003803
+   Statistic: 0.305410
+   Python code: random.expovariate(0.241)
+
+8. uniform
+   Parameters: loc=0.6000, scale=11.7000
+   P-value: 0.000980
+   Statistic: 0.336538
+   Python code: random.uniform(0.600, 12.300)
+
+9. weibull_max
+   Parameters: c=0.4315, loc=12.3000, scale=1.4225
+   P-value: 0.000000
+   Statistic: 0.756230
+   Python code: random.weibullvariate(1.422, 12.300)
+

@@ -1,0 +1,81 @@
+
+Distribution Fitting Summary Report
+==================================================
+
+Data Statistics:
+- Sample size: 30
+- Mean: 8.9547
+- Std Dev: 3.4920
+- Min: 3.3800
+- Max: 17.1700
+
+Best Fitting Distribution: weibull_min
+- Parameters: c=1.825, loc=2.832, scale=6.878
+- P-value: 0.9990
+- Significant at α=0.05: Yes
+
+Python Random Code:
+random.weibullvariate(6.878, 2.832)
+
+Top 3 Distributions by P-value:
+1. weibull_min: p-value = 0.9990 (Significant: Yes)
+2. triang: p-value = 0.9982 (Significant: Yes)
+3. gamma: p-value = 0.9968 (Significant: Yes)
+
+
+Detailed Results:
+--------------------------------------------------------------------------------
+1. weibull_min
+   Parameters: c=1.8255, loc=2.8319, scale=6.8778
+   P-value: 0.998998
+   Statistic: 0.063781
+   Python code: random.weibullvariate(6.878, 2.832)
+
+2. triang
+   Parameters: c=0.2037, loc=2.6105, scale=15.8066
+   P-value: 0.998184
+   Statistic: 0.066341
+   Python code: random.triangular(2.610, 18.417, 5.830)
+
+3. gamma
+   Parameters: a=4.4742, loc=1.3845, scale=1.6920
+   P-value: 0.996751
+   Statistic: 0.069177
+   Python code: random.gammavariate(4.474, 0.591)
+
+4. lognorm
+   Parameters: s=0.2717, loc=-3.7634, scale=12.2620
+   P-value: 0.995904
+   Statistic: 0.070410
+   Python code: random.lognormvariate(-3.763, 12.262)
+
+5. norm
+   Parameters: loc=8.9547, scale=3.4333
+   P-value: 0.943330
+   Statistic: 0.091526
+   Python code: random.gauss(8.955, 3.433)
+
+6. beta
+   Parameters: a=0.8586, b=1.3736, loc=3.3800, scale=14.3903
+   P-value: 0.785060
+   Statistic: 0.114484
+   Python code: random.betavariate(0.859, 1.374)
+
+7. expon
+   Parameters: loc=3.3800, scale=5.5747
+   P-value: 0.211988
+   Statistic: 0.187810
+   Python code: random.expovariate(0.179)
+
+8. uniform
+   Parameters: loc=3.3800, scale=13.7900
+   P-value: 0.076522
+   Statistic: 0.227194
+   Python code: random.uniform(3.380, 17.170)
+
+9. weibull_max
+   Parameters: c=0.3947, loc=17.1700, scale=1.3586
+   P-value: 0.000000
+   Statistic: 0.682804
+   Python code: random.weibullvariate(1.359, 17.170)
+

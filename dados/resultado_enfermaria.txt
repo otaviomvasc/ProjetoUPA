@@ -1,0 +1,81 @@
+
+Distribution Fitting Summary Report
+==================================================
+
+Data Statistics:
+- Sample size: 32
+- Mean: 2.1716
+- Std Dev: 1.6317
+- Min: 0.4200
+- Max: 7.7800
+
+Best Fitting Distribution: expon
+- Parameters: loc=0.420, scale=1.752
+- P-value: 0.8624
+- Significant at α=0.05: Yes
+
+Python Random Code:
+random.expovariate(0.571)
+
+Top 3 Distributions by P-value:
+1. expon: p-value = 0.8624 (Significant: Yes)
+2. lognorm: p-value = 0.8325 (Significant: Yes)
+3. weibull_min: p-value = 0.7514 (Significant: Yes)
+
+
+Detailed Results:
+--------------------------------------------------------------------------------
+1. expon
+   Parameters: loc=0.4200, scale=1.7516
+   P-value: 0.862383
+   Statistic: 0.101675
+   Python code: random.expovariate(0.571)
+
+2. lognorm
+   Parameters: s=0.7704, loc=0.0550, scale=1.6066
+   P-value: 0.832508
+   Statistic: 0.105453
+   Python code: random.lognormvariate(0.055, 1.607)
+
+3. weibull_min
+   Parameters: c=0.9076, loc=0.4200, scale=1.7183
+   P-value: 0.751442
+   Statistic: 0.114691
+   Python code: random.weibullvariate(1.718, 0.420)
+
+4. gamma
+   Parameters: a=0.9561, loc=0.4200, scale=1.6798
+   P-value: 0.540232
+   Statistic: 0.136977
+   Python code: random.gammavariate(0.956, 0.595)
+
+5. norm
+   Parameters: loc=2.1716, scale=1.6060
+   P-value: 0.332407
+   Statistic: 0.162194
+   Python code: random.gauss(2.172, 1.606)
+
+6. triang
+   Parameters: c=0.0000, loc=0.4200, scale=7.7042
+   P-value: 0.014558
+   Statistic: 0.270793
+   Python code: random.triangular(0.420, 8.124, 0.420)
+
+7. beta
+   Parameters: a=0.4851, b=14.3067, loc=0.4200, scale=31.0492
+   P-value: 0.001348
+   Statistic: 0.329515
+   Python code: random.betavariate(0.485, 14.307)
+
+8. uniform
+   Parameters: loc=0.4200, scale=7.3600
+   P-value: 0.000001
+   Statistic: 0.470109
+   Python code: random.uniform(0.420, 7.780)
+
+9. weibull_max
+   Parameters: c=0.5696, loc=7.7800, scale=1.3142
+   P-value: 0.000000
+   Statistic: 0.763708
+   Python code: random.weibullvariate(1.314, 7.780)
+
