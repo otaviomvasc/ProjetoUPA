@@ -316,7 +316,7 @@ def distribuicoes_cen4(processo, slot="None"):
     coef_chegadas = 60
     coef_checkin = 60
     dados = {
-        "Chegada": expovariate(0.0035),
+        "Chegada": expovariate(0.0037),
         "Ficha": max(
             0.5,
             random.lognormvariate(0.460, 0.576),
@@ -342,13 +342,11 @@ def distribuicoes_cen4(processo, slot="None"):
         "Eletro": 12 * coef_chegadas,
         "Exame de Urina": 2 * coef_chegadas,
         "Exame de Sangue": 3 * coef_chegadas,
-        "Análise de Sangue Externo": 0.25
-        * 60
-        * coef_chegadas,  # Quatrohoras,masreduziprameiaho
-        "Análise de Sangue Interno": 0.1 * 60 * coef_chegadas,
-        "Análise de Urina": 2 * 60 * coef_chegadas,
+        "Análise de Sangue Externo": 4 * 60 * coef_chegadas,
+        "Análise de Sangue Interno": 60 * coef_chegadas,
+        "Análise de Urina": 60 * coef_chegadas,
         "Aplicar Medicação": random.triangular(
-            10 * coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas
+            1 * coef_chegadas, 5 * coef_chegadas, 3 * coef_chegadas
         ),
         "Tomar Medicação": random.gauss(35.350, 2.443) * coef_chegadas,
     }
@@ -403,7 +401,7 @@ def distribuicoes_base(processo, slot="None"):
     coef_chegadas = 60
     coef_checkin = 60
     dados = {
-        "Chegada": expovariate(0.0035),
+        "Chegada": expovariate(0.0037),
         "Ficha": max(
             0.5,
             random.lognormvariate(0.460, 0.576),
@@ -428,13 +426,13 @@ def distribuicoes_base(processo, slot="None"):
         "Eletro": 12 * coef_chegadas,
         "Exame de Urina": 2 * coef_chegadas,
         "Exame de Sangue": 3 * coef_chegadas,
-        "Análise de Sangue Externo": 0.25
-        * 60
-        * coef_chegadas,  # Quatrohoras,masreduziprameiaho
-        "Análise de Sangue Interno": 0.1 * 60 * coef_chegadas,
-        "Análise de Urina": 2 * 60 * coef_chegadas,
+        # "Análise de Sangue Externo": 0.25 * 60 * coef_chegadas,
+        # "Análise de Sangue Interno": 0.1 * 60 * coef_chegadas,
+        "Análise de Sangue Externo": 4 * 60 * coef_chegadas,
+        "Análise de Sangue Interno": 60 * coef_chegadas,
+        "Análise de Urina": 60 * coef_chegadas,
         "Aplicar Medicação": random.triangular(
-            10 * coef_chegadas, 60 * coef_chegadas, 40 * coef_chegadas
+            1 * coef_chegadas, 5 * coef_chegadas, 3 * coef_chegadas
         ),
         "Tomar Medicação": random.gauss(35.350, 2.443) * coef_chegadas,
     }
@@ -607,7 +605,7 @@ if __name__ == "__main__":
     distribuicoes_probabilidade = calcula_distribuicoes_prob()
 
     warmup = 5 * 86400
-    replicacoes = 30
+    replicacoes = 55
     recursos_base = {
         "Secretária": [2, False],
         "Enfermeira de Triagem": [2, False],
@@ -700,60 +698,246 @@ if __name__ == "__main__":
 
     estatisticas_finais = dict()
 
-    def rodar_cenario(
-        cenario,
-        dist_probabilidade,
-        tempo,
-        necessidade_recursos,
-        ordem_processo,
-        atribuicoes_processo,
-        liberacao_recursos,
-        warmup,
-        replicacoes=55,
-    ):
-        """Wrapper para rodar um cenário e retornar o nome e dados"""
-        dados_cenario = cenario.rodar(
-            dist_probabilidade=dist_probabilidade,
-            tempo=tempo,
-            necessidade_recursos=necessidade_recursos,
-            ordem_processo=ordem_processo,
-            atribuicoes_processo=atribuicoes_processo,
-            liberacao_recursos=liberacao_recursos,
-            warmup=warmup,
-            replicacoes=replicacoes,
-            imprime=False,
-        )
-        return cenario.nome, dados_cenario
+    # ========== ESCOLHA O MODO DE EXECUÇÃO ==========
+    # Opção 1: Execução SEQUENCIAL (mais confiável, recomendado)
+    # Opção 2: Execução PARALELA (mais rápida, requer cuidado)
 
-    # Paralelização usando ProcessPoolExecutor
-    # max_workers=None usa o número de CPUs disponíveis
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(cenarios)) as executor:
-        # Submete todas as tarefas
-        futures = {
-            executor.submit(
-                rodar_cenario,
-                cenario,
-                distribuicoes_probabilidade,
-                tempo,
-                necessidade_recursos,
-                ordem_processo,
-                atribuicoes_processo,
-                liberacao_recursos,
-                warmup,
-                55,
-            ): cenario.nome
-            for cenario in cenarios
-        }
+    USAR_PARALELIZACAO = False  # Altere para True para usar paralelização
 
-        # Coleta os resultados conforme completam
-        for future in concurrent.futures.as_completed(futures):
-            nome_cenario = futures[future]
+    if not USAR_PARALELIZACAO:
+        # ========== EXECUÇÃO SEQUENCIAL ==========
+        print("=" * 80)
+        print("MODO: Execução Sequencial")
+        print("=" * 80)
+
+        for cenario in cenarios:
+            print(
+                f"\n[{len(estatisticas_finais)+1}/{len(cenarios)}] Iniciando cenário '{cenario.nome}'..."
+            )
+            # if cenario.nome != "To Be 3":
+            # continue
+            dados_cenario = cenario.rodar(
+                dist_probabilidade=distribuicoes_probabilidade,
+                tempo=tempo,
+                necessidade_recursos=necessidade_recursos,
+                ordem_processo=ordem_processo,
+                atribuicoes_processo=atribuicoes_processo,
+                liberacao_recursos=liberacao_recursos,
+                warmup=warmup,
+                replicacoes=55,
+                imprime=False,
+            )
+            estatisticas_finais[cenario.nome] = dados_cenario
+            print(f"✓ Cenário '{cenario.nome}' concluído!")
+
+        print("\n" + "=" * 80)
+        print(f"Todos os {len(cenarios)} cenários foram concluídos!")
+        print("=" * 80)  # 543.318.036-00
+
+    else:
+        # ========== EXECUÇÃO PARALELA ==========
+        print("=" * 80)
+        print("MODO: Execução Paralela")
+        print("=" * 80)
+
+        def rodar_cenario(
+            cenario,
+            dist_probabilidade,
+            tempo,
+            necessidade_recursos,
+            ordem_processo,
+            atribuicoes_processo,
+            liberacao_recursos,
+            warmup,
+            replicacoes=55,
+        ):
+            """Wrapper para rodar um cenário e retornar o nome e dados"""
             try:
-                nome, dados_cenario = future.result()
-                estatisticas_finais[nome] = dados_cenario
-                print(f"✓ Cenário '{nome}' concluído!")
+                print(f"[PARALELO] Iniciando cenário '{cenario.nome}'...")
+                dados_cenario = cenario.rodar(
+                    dist_probabilidade=dist_probabilidade,
+                    tempo=tempo,
+                    necessidade_recursos=necessidade_recursos,
+                    ordem_processo=ordem_processo,
+                    atribuicoes_processo=atribuicoes_processo,
+                    liberacao_recursos=liberacao_recursos,
+                    warmup=warmup,
+                    replicacoes=replicacoes,
+                    imprime=False,
+                )
+                print(f"[PARALELO] ✓ Cenário '{cenario.nome}' concluído!")
+                return cenario.nome, dados_cenario, None
             except Exception as exc:
-                print(f"✗ Cenário '{nome_cenario}' gerou exceção: {exc}")
+                print(f"[PARALELO] ✗ ERRO no cenário '{cenario.nome}': {exc}")
+                import traceback
+
+                traceback.print_exc()
+                return cenario.nome, None, exc
+
+        # Paralelização usando ThreadPoolExecutor
+        # max_workers=len(cenarios) = execução paralela (múltiplas threads)
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=len(cenarios)
+        ) as executor:
+            # Submete todas as tarefas
+            futures = {
+                executor.submit(
+                    rodar_cenario,
+                    cenario,
+                    distribuicoes_probabilidade,
+                    tempo,
+                    necessidade_recursos,
+                    ordem_processo,
+                    atribuicoes_processo,
+                    liberacao_recursos,
+                    warmup,
+                    55,
+                ): cenario.nome
+                for cenario in cenarios
+            }
+
+            # Coleta os resultados conforme completam
+            resultados_coletados = 0
+            erros = []
+
+            for future in concurrent.futures.as_completed(futures):
+                nome_cenario = futures[future]
+                try:
+                    nome, dados_cenario, erro = future.result()
+                    resultados_coletados += 1
+
+                    if erro is None and dados_cenario is not None:
+                        estatisticas_finais[nome] = dados_cenario
+                        print(
+                            f"[{resultados_coletados}/{len(cenarios)}] Resultado coletado: '{nome}'"
+                        )
+                    else:
+                        erros.append((nome, erro))
+                        print(
+                            f"[{resultados_coletados}/{len(cenarios)}] ✗ Falha ao coletar resultado: '{nome}'"
+                        )
+
+                except Exception as exc:
+                    erros.append((nome_cenario, exc))
+                    print(
+                        f"✗ Exceção ao processar resultado do cenário '{nome_cenario}': {exc}"
+                    )
+                    import traceback
+
+                    traceback.print_exc()
+
+            # Aguarda explicitamente que todas as tarefas terminem
+            # (o context manager já faz isso, mas garantimos)
+            print("\nAguardando conclusão de todas as threads...")
+            for future in futures:
+                future.result()  # Isso garante que todas terminaram
+
+        # Validação: verifica se todos os cenários foram processados
+        print("\n" + "=" * 80)
+        print("VALIDAÇÃO DOS RESULTADOS:")
+        print("=" * 80)
+        print(f"Cenários esperados: {len(cenarios)}")
+        print(f"Cenários processados: {len(estatisticas_finais)}")
+        print(f"Erros encontrados: {len(erros)}")
+
+        if len(estatisticas_finais) < len(cenarios):
+            print("\n⚠️  ATENÇÃO: Nem todos os cenários foram processados!")
+            print("Cenários faltando:")
+            cenarios_processados = set(estatisticas_finais.keys())
+            for cen in cenarios:
+                if cen.nome not in cenarios_processados:
+                    print(f"  - {cen.nome}")
+            if erros:
+                print("\nErros encontrados:")
+                for nome, erro in erros:
+                    print(f"  - {nome}: {erro}")
+            print("\n⚠️  Gerando gráficos apenas com os cenários disponíveis...")
+        else:
+            print("✓ Todos os cenários foram processados com sucesso!")
+
+        print("=" * 80)
+
+    # CÓDIGO DE PARALELIZAÇÃO ANTIGO (descomente para usar versão simples):
+    # def rodar_cenario(
+    #     cenario,
+    #     dist_probabilidade,
+    #     tempo,
+    #     necessidade_recursos,
+    #     ordem_processo,
+    #     atribuicoes_processo,
+    #     liberacao_recursos,
+    #     warmup,
+    #     replicacoes=55,
+    # ):
+    #     """Wrapper para rodar um cenário e retornar o nome e dados"""
+    #     dados_cenario = cenario.rodar(
+    #         dist_probabilidade=dist_probabilidade,
+    #         tempo=tempo,
+    #         necessidade_recursos=necessidade_recursos,
+    #         ordem_processo=ordem_processo,
+    #         atribuicoes_processo=atribuicoes_processo,
+    #         liberacao_recursos=liberacao_recursos,
+    #         warmup=warmup,
+    #         replicacoes=replicacoes,
+    #         imprime=False,
+    #     )
+    #     return cenario.nome, dados_cenario
+    #
+    # # Paralelização usando ThreadPoolExecutor
+    # # max_workers=1 = execução sequencial (uma thread)
+    # # max_workers=len(cenarios) = execução paralela (múltiplas threads)
+    # with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+    #     # Submete todas as tarefas
+    #     futures = {
+    #         executor.submit(
+    #             rodar_cenario,
+    #             cenario,
+    #             distribuicoes_probabilidade,
+    #             tempo,
+    #             necessidade_recursos,
+    #             ordem_processo,
+    #             atribuicoes_processo,
+    #             liberacao_recursos,
+    #             warmup,
+    #             55,
+    #         ): cenario.nome
+    #         for cenario in cenarios
+    #     }
+    #
+    #     # Coleta os resultados conforme completam
+    #     for future in concurrent.futures.as_completed(futures):
+    #         nome_cenario = futures[future]
+    #         try:
+    #             nome, dados_cenario = future.result()
+    #             estatisticas_finais[nome] = dados_cenario
+    #             print(f"✓ Cenário '{nome}' concluído!")
+    #         except Exception as exc:
+    #             print(f"✗ Cenário '{nome_cenario}' gerou exceção: {exc}")
+
+    # Validação final antes de gerar gráficos
+    print("\n" + "=" * 80)
+    print("VERIFICAÇÃO FINAL ANTES DE GERAR GRÁFICOS:")
+    print("=" * 80)
+    print(
+        f"Cenários disponíveis em 'estatisticas_finais': {list(estatisticas_finais.keys())}"
+    )
+    print(f"Total de cenários: {len(estatisticas_finais)}")
+
+    if len(estatisticas_finais) == 0:
+        print("\n✗ ERRO CRÍTICO: Nenhum cenário foi processado! Encerrando...")
+        raise RuntimeError(
+            "Nenhum cenário foi processado. Não é possível gerar gráficos."
+        )
+
+    if len(estatisticas_finais) < len(cenarios):
+        print(
+            f"\n⚠️  AVISO: Apenas {len(estatisticas_finais)} de {len(cenarios)} cenários foram processados."
+        )
+        print("Os gráficos serão gerados apenas com os cenários disponíveis.")
+    else:
+        print("✓ Todos os cenários estão disponíveis para geração de gráficos.")
+
+    print("=" * 80 + "\n")
 
     # Formatação dos dataframes para plots - Formato 1!!
     dados_wip = list()

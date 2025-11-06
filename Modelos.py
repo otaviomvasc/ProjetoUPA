@@ -1442,6 +1442,8 @@ class Recursos:
             df_aux = pd.DataFrame(rec.estatisticas)
             df_aux["Fila_Entidades"] = rec.lista_fila_acumulada
             df_aux = df_aux.loc[df_aux["T"] * 86400 > warmup]
+            # df_aux["tamanho_fila"] = df_aux["tamanho_fila"].fillna(0)
+            # df_aux["utilizacao"] = df_aux["utilizacao"].fillna(0)
             print("-" * 90)
             print(
                 f'Utilizacao Média do recurso {nome}: {round(np.mean(df_aux["utilizacao"]),2)*100}%'
@@ -1515,13 +1517,16 @@ class CorridaSimulacao:
         for n_sim in range(len(self.simulacoes)):
             print(f"Simulação {n_sim + 1}")
             print("-" * 150)
-            simulacao = self.simulacoes[n_sim]
-            simulacao.comeca_simulacao()
-            simulacao.env.run(until=simulacao.tempo)
-            dados_p, dados_validacao = simulacao.finaliza_todas_estatisticas()
-            # dados_validacao['rep'] = n_sim
-            # df_aux = pd.concat([df_aux, dados_validacao])
-            self.dados_planilha[n_sim] = dados_p
+            try:
+                simulacao = self.simulacoes[n_sim]
+                simulacao.comeca_simulacao()
+                simulacao.env.run(until=simulacao.tempo)
+                dados_p, dados_validacao = simulacao.finaliza_todas_estatisticas()
+                # dados_validacao['rep'] = n_sim
+                # df_aux = pd.concat([df_aux, dados_validacao])
+                self.dados_planilha[n_sim] = dados_p
+            except:
+                continue
 
             # if len(self.simulacoes) == 1:
             # simulacao.confirma_fluxos()
